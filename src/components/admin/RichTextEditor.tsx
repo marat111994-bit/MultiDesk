@@ -79,6 +79,7 @@ export function RichTextEditor({
       }),
     ],
     content: value,
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML())
     },

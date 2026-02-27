@@ -12,6 +12,11 @@ export async function GET() {
 
     const services = await prisma.service.findMany({
       include: {
+        _count: {
+          select: {
+            subcategories: true,
+          },
+        },
         subcategories: true,
         pricing: true,
         faqItems: true,
