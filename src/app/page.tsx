@@ -14,8 +14,7 @@ import {
 } from "@/components/sections";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { trustNumbers, whyUs, steps, cases, clients, navigation } from "@/data";
-import { vyvozGrunta } from "@/data/services/vyvoz-grunta";
+import { getServices, getCases, getClients, getTrustNumbers, getSteps, getHomeAdvantages, getPromo } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "DanMax — Вывоз и утилизация строительных отходов в Москве",
@@ -34,16 +33,6 @@ export const metadata: Metadata = {
     canonical: "https://danmax.moscow/",
   },
 };
-
-// Обзорные цены для главной
-const overviewPricing = [
-  { service: "Вывоз грунта", unit: "м³", price: 350, link: "/uslugi/vyvoz-grunta/" },
-  { service: "Кирпичный бой", unit: "м³", price: 450, link: "/uslugi/kirpichnyj-boj/" },
-  { service: "Бетонный бой", unit: "м³", price: 500, link: "/uslugi/betonnyj-boj/" },
-  { service: "Асфальтовый бой", unit: "м³", price: 450, link: "/uslugi/asfaltnyj-boj/" },
-  { service: "Смешанные отходы", unit: "м³", price: 550, link: "/uslugi/smeshannye-stroitelnye-othody/" },
-  { service: "Документация", unit: "услуга", price: 5000, link: "/uslugi/razreshitelnaya-dokumentaciya/" },
-];
 
 // JSON-LD разметка Organization
 const organizationJsonLd = {
@@ -65,10 +54,27 @@ const organizationJsonLd = {
   ],
 };
 
-// Основные услуги для навигации
-const mainServices = navigation.find((n) => n.label === "Услуги")?.children || [];
+export default async function HomePage() {
+  const [services, cases, clients, trustNumbers, steps, advantages, promo] = await Promise.all([
+    getServices(),
+    getCases(),
+    getClients(),
+    getTrustNumbers(),
+    getSteps(),
+    getHomeAdvantages(),
+    getPromo(),
+  ])
 
-export default function HomePage() {
+  const mainServices = services.slice(0, 6)
+
+  // Обзорные цены для главной
+  const overviewPricing = services.map(service => ({
+    service: service.shortTitle,
+    unit: "м³",
+    price: parseInt(service.pricing[0]?.price) || 350,
+    link: `/uslugi/${service.slug}/`,
+  }))
+
   return (
     <>
       {/* JSON-LD Organization */}
@@ -106,7 +112,7 @@ export default function HomePage() {
           </h2>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
             {mainServices.map((service) => (
-              <Card key={service.label} href={service.href}>
+              <Card key={service.slug} href={`/uslugi/${service.slug}/`}>
                 <div className="w-12 h-12 rounded-full bg-primary-50 flex items-center justify-center mb-4">
                   <svg
                     className="w-6 h-6 text-primary-500"
@@ -119,10 +125,10 @@ export default function HomePage() {
                   </svg>
                 </div>
                 <h3 className="font-semibold text-gray-900 text-lg mb-2">
-                  {service.label}
+                  {service.shortTitle}
                 </h3>
                 <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {service.children?.[0]?.label || "Профессиональный вывоз и утилизация"}
+                  {service.shortDescription}
                 </p>
                 <Button variant="ghost" size="sm" className="w-full justify-between group">
                   <span>Подробнее</span>
@@ -146,7 +152,7 @@ export default function HomePage() {
       {/* Why Us */}
       <WhyUs
         title="Почему выбирают DanMax"
-        advantages={whyUs}
+        advantages={advantages}
         image="/images/why-us/home.jpg"
         imageAlt="Команда DanMax"
       />
@@ -177,14 +183,24 @@ export default function HomePage() {
       {/* Cases Section */}
       <CasesSection
         title="Наши проекты"
-        cases={cases}
-        clients={clients}
+        cases={cases.map(c => ({
+          title: c.title,
+          image: c.image || "",
+          volume: c.volume || "",
+          duration: c.duration || "",
+          serviceType: "ground",
+          description: c.description || undefined,
+        }))}
+        clients={clients.map(c => ({
+          name: c.name,
+          logo: c.logo || "",
+        }))}
       />
 
       {/* FAQ Section */}
       <FaqSection
         title="Частые вопросы о вывозе и утилизации отходов"
-        items={vyvozGrunta.faq.slice(0, 5)}
+        items={[]}
       />
 
       {/* Contact Form */}
