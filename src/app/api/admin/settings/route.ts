@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
@@ -14,7 +14,16 @@ export async function GET() {
       orderBy: [{ group: "asc" }, { order: "asc" }],
     })
 
-    return NextResponse.json(settings)
+    // Группируем настройки по group
+    const grouped = settings.reduce((acc, setting) => {
+      if (!acc[setting.group]) {
+        acc[setting.group] = {}
+      }
+      acc[setting.group][setting.key] = setting.value
+      return acc
+    }, {} as Record<string, Record<string, string>>)
+
+    return NextResponse.json(grouped)
   } catch (error) {
     console.error("Error fetching settings:", error)
     return NextResponse.json(
@@ -24,29 +33,32 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function PUT(request: Request) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const formData = await request.formData()
-    const updates: Array<{ key: string; value: string }> = []
+    const body = await request.json()
+    // body имеет вид: { contacts: { phone: "...", email: "..." }, company: {...}, ... }
 
-    formData.forEach((value, key) => {
-      updates.push({ key, value: value as string })
-    })
-
-    // Обновляем все настройки в транзакции
-    await prisma.$transaction(
-      updates.map((update) =>
-        prisma.siteSetting.update({
-          where: { key: update.key },
-          data: { value: update.value },
+    const updates = Object.entries(body).flatMap(([group, values]) =>
+      Object.entries(values as Record<string, string>).map(([key, value]) =>
+        prisma.siteSetting.upsert({
+          where: { key },
+          update: { value },
+          create: {
+            key,
+            value,
+            label: key.split(".").pop() || key,
+            group,
+          },
         })
       )
     )
+
+    await prisma.$transaction(updates)
 
     return NextResponse.json({ success: true })
   } catch (error) {

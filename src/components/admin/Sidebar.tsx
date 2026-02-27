@@ -15,11 +15,10 @@ import {
   Settings,
   LogOut,
   ExternalLink,
-  Menu,
   X,
 } from "lucide-react"
 import { signOut } from "next-auth/react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 const navigation = [
   { name: "Дашборд", href: "/admin", icon: LayoutDashboard },
@@ -41,6 +40,11 @@ interface SidebarProps {
 
 export function Sidebar({ unreadCount = 0, onToggle, isOpen = true }: SidebarProps) {
   const pathname = usePathname()
+  const [localUnread, setLocalUnread] = useState(unreadCount)
+
+  useEffect(() => {
+    setLocalUnread(unreadCount)
+  }, [unreadCount])
 
   return (
     <>
@@ -80,7 +84,7 @@ export function Sidebar({ unreadCount = 0, onToggle, isOpen = true }: SidebarPro
                 ? pathname === "/admin"
                 : pathname.startsWith(item.href)
 
-            const showBadge = item.badge && unreadCount > 0
+            const showBadge = item.badge && localUnread > 0
 
             return (
               <Link
@@ -102,8 +106,8 @@ export function Sidebar({ unreadCount = 0, onToggle, isOpen = true }: SidebarPro
                 />
                 <span className="flex-1">{item.name}</span>
                 {showBadge && (
-                  <span className="ml-2 rounded-full bg-primary-600 px-2 py-0.5 text-xs font-medium text-white">
-                    {unreadCount}
+                  <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-medium text-white">
+                    {localUnread > 9 ? "9+" : localUnread}
                   </span>
                 )}
               </Link>
