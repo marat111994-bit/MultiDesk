@@ -1,27 +1,95 @@
-import { getServerSession } from "next-auth"
-import { redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+"use client"
+
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Pencil, Trash2, Plus, Eye, EyeOff } from "lucide-react"
+import { Pencil, Trash2, Plus, Copy, ChevronRight, ChevronDown } from "lucide-react"
+import { clsx } from "clsx"
 
-export default async function AdminServicesPage() {
-  const session = await getServerSession(authOptions)
+interface Service {
+  id: string
+  slug: string
+  title: string
+  isActive: boolean
+  order: number
+  _count: { subcategories: number }
+  subcategories?: any[]
+}
 
-  if (!session) {
-    redirect("/admin/login")
+export default function AdminServicesPage() {
+  const [services, setServices] = useState<Service[]>([])
+  const [expanded, setExpanded] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchServices()
+  }, [])
+
+  async function fetchServices() {
+    try {
+      const res = await fetch("/api/admin/services")
+      if (res.ok) {
+        const data = await res.json()
+        setServices(data)
+      }
+    } catch (error) {
+      console.error("Error fetching services:", error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const services = await prisma.service.findMany({
-    include: {
-      _count: {
-        select: {
-          subcategories: true,
-        },
-      },
-    },
-    orderBy: { order: "asc" },
-  })
+  async function toggleActive(id: string, current: boolean) {
+    try {
+      const res = await fetch(`/api/admin/services/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !current }),
+      })
+      if (res.ok) {
+        setServices(services.map(s => s.id === id ? { ...s, isActive: !current } : s))
+      }
+    } catch (error) {
+      console.error("Error toggling active:", error)
+    }
+  }
+
+  async function duplicate(id: string) {
+    try {
+      const service = services.find(s => s.id === id)
+      if (!service) return
+
+      const res = await fetch("/api/admin/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...service,
+          title: `${service.title} (копия)`,
+          slug: `${service.slug}-copy`,
+        }),
+      })
+      if (res.ok) {
+        fetchServices()
+      }
+    } catch (error) {
+      console.error("Error duplicating:", error)
+    }
+  }
+
+  async function deleteService(id: string) {
+    if (!confirm("Удалить услугу? Это действие нельзя отменить.")) return
+    try {
+      const res = await fetch(`/api/admin/services/${id}`, { method: "DELETE" })
+      if (res.ok) {
+        fetchServices()
+      }
+    } catch (error) {
+      console.error("Error deleting:", error)
+    }
+  }
+
+  if (loading) {
+    return <div className="py-12 text-center">Загрузка...</div>
+  }
 
   return (
     <div>
@@ -45,6 +113,7 @@ export default async function AdminServicesPage() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
+              <th className="w-8 px-6 py-3"></th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Название
               </th>
@@ -61,43 +130,94 @@ export default async function AdminServicesPage() {
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {services.map((service) => (
-              <tr key={service.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
+              <>
+                <tr key={service.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => setExpanded(expanded === service.id ? null : service.id)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      {expanded === service.id ? (
+                        <ChevronDown className="h-5 w-5" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5" />
+                      )}
+                    </button>
+                  </td>
+                  <td className="px-6 py-4">
+                    <Link
+                      href={`/admin/services/${service.id}/edit`}
+                      className="text-sm font-medium text-primary-600 hover:text-primary-900"
+                    >
                       {service.title}
-                    </p>
+                    </Link>
                     <p className="text-xs text-gray-500">{service.slug}</p>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-500">
-                    {service._count.subcategories} подкатегорий
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                      service.isActive
-                        ? "bg-green-100 text-green-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {service.isActive ? "Активна" : "Неактивна"}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link
-                    href={`/admin/services/${service.id}/edit`}
-                    className="mr-3 text-primary-600 hover:text-primary-900"
-                  >
-                    <Pencil className="inline h-4 w-4" />
-                  </Link>
-                  <button className="text-red-600 hover:text-red-900">
-                    <Trash2 className="inline h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-sm text-gray-500">
+                      {service._count.subcategories} подкатегорий
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => toggleActive(service.id, service.isActive)}
+                      className={clsx(
+                        "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                        service.isActive ? "bg-green-500" : "bg-gray-200"
+                      )}
+                    >
+                      <span
+                        className={clsx(
+                          "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                          service.isActive ? "translate-x-5" : "translate-x-0"
+                        )}
+                      />
+                    </button>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <Link
+                      href={`/admin/services/${service.id}/edit`}
+                      className="mr-3 text-primary-600 hover:text-primary-900"
+                    >
+                      <Pencil className="inline h-4 w-4" />
+                    </Link>
+                    <button
+                      onClick={() => duplicate(service.id)}
+                      className="mr-3 text-gray-600 hover:text-gray-900"
+                    >
+                      <Copy className="inline h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => deleteService(service.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <Trash2 className="inline h-4 w-4" />
+                    </button>
+                  </td>
+                </tr>
+                {expanded === service.id && service.subcategories && (
+                  <tr className="bg-gray-50">
+                    <td colSpan={5} className="px-6 py-4">
+                      <div className="pl-8">
+                        <h4 className="mb-2 text-sm font-medium text-gray-700">Подкатегории:</h4>
+                        <ul className="space-y-1">
+                          {service.subcategories.map((sub) => (
+                            <li key={sub.id} className="flex items-center justify-between">
+                              <span className="text-sm text-gray-600">{sub.title}</span>
+                              <span className={clsx(
+                                "inline-flex rounded-full px-2 text-xs font-semibold",
+                                sub.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                              )}>
+                                {sub.isActive ? "Активна" : "Неактивна"}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
             ))}
           </tbody>
         </table>
