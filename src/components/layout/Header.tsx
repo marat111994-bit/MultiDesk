@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { navigation } from "@/data";
@@ -12,6 +12,9 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
+  const menuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const servicesItem = navigation.find((item) => item.label === "Услуги");
+  const otherItems = navigation.filter((item) => item.label !== "Услуги");
 
   // Обработчик скролла для тени
   useEffect(() => {
@@ -48,8 +51,28 @@ export function Header() {
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
 
-  const servicesItem = navigation.find((item) => item.label === "Услуги");
-  const otherItems = navigation.filter((item) => item.label !== "Услуги");
+  // Обработчики для мегаменю с задержкой
+  const handleMouseEnter = () => {
+    if (menuTimeoutRef.current) {
+      clearTimeout(menuTimeoutRef.current);
+    }
+    setIsMegaMenuOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    menuTimeoutRef.current = setTimeout(() => {
+      setIsMegaMenuOpen(false);
+    }, 150);
+  };
+
+  // Очистка таймера при размонтировании
+  useEffect(() => {
+    return () => {
+      if (menuTimeoutRef.current) {
+        clearTimeout(menuTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <>
@@ -75,12 +98,12 @@ export function Header() {
               {/* Услуги с MegaMenu */}
               <div
                 className="relative"
-                onMouseEnter={() => setIsMegaMenuOpen(true)}
-                onMouseLeave={() => setIsMegaMenuOpen(false)}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
               >
                 <button
                   className={`flex items-center gap-1 text-sm font-medium transition-colors ${
-                    pathname?.startsWith("/uslugi/")
+                    pathname?.startsWith("/uslugi/") || isMegaMenuOpen
                       ? "text-primary-500"
                       : "text-gray-700 hover:text-primary-500"
                   }`}
@@ -102,9 +125,11 @@ export function Header() {
                 </button>
 
                 {/* MegaMenu */}
-                {isMegaMenuOpen && servicesItem && (
-                  <MegaMenu items={servicesItem.children || []} />
-                )}
+                <MegaMenu
+                  items={servicesItem?.children || []}
+                  isOpen={isMegaMenuOpen}
+                  onClose={() => setIsMegaMenuOpen(false)}
+                />
               </div>
 
               {/* Остальные пункты */}

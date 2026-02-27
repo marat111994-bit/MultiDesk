@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { prisma } from "@/lib/prisma";
 
 // Схема валидации
 const contactSchema = z.object({
@@ -15,6 +16,17 @@ export async function POST(request: NextRequest) {
 
     // Валидация данных
     const validatedData = contactSchema.parse(body);
+
+    // Сохранение в базу данных
+    await prisma.formSubmission.create({
+      data: {
+        name: validatedData.name,
+        phone: validatedData.phone,
+        serviceType: validatedData.serviceType || null,
+        comment: validatedData.comment || null,
+        source: request.headers.get("referer") || null,
+      },
+    });
 
     // Отправка в Telegram
     const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -47,8 +59,6 @@ export async function POST(request: NextRequest) {
         }
       );
     }
-
-    // TODO: Здесь можно добавить сохранение в базу данных или CRM
 
     return NextResponse.json({ success: true });
   } catch (error) {

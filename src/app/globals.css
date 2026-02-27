@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Базовые стили для иконок lucide-react */
+svg {
+  display: inline-block;
+  vertical-align: middle;
+}
+
 :root {
   /* Фон и текст */
   --background: #ffffff;

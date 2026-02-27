@@ -1,0 +1,245 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ==================== АВТОРИЗАЦИЯ ====================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String   // bcrypt hash
+  name          String
+  role          String   @default("admin") // admin, editor
+  createdAt     DateTime @default(now())
+}
+
+// ==================== УСЛУГИ ====================
+
+model Service {
+  id               String        @id @default(cuid())
+  slug             String        @unique
+  title            String
+  shortTitle       String
+  description      String        // Полное описание (HTML из TipTap)
+  shortDescription String
+  heroImage        String?
+  heroImageAlt     String?
+  badges           String        // JSON array: ["Лицензия", "от 350₽"]
+  order            Int           @default(0) // Порядок сортировки
+  isActive         Boolean       @default(true)
+  
+  // SEO
+  seoTitle         String?
+  seoDescription   String?
+  seoH1            String?
+  seoKeywords      String?       // JSON array
+  ogImage          String?
+  
+  // Связи
+  subcategories    Subcategory[]
+  pricing          PriceRow[]
+  faqItems         FaqItem[]
+  advantages       Advantage[]
+  cases            Case[]
+  
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model Subcategory {
+  id               String     @id @default(cuid())
+  slug             String     @unique
+  title            String
+  shortTitle       String
+  description      String     // HTML
+  shortDescription String
+  heroImage        String?
+  heroImageAlt     String?
+  badges           String     // JSON array
+  order            Int        @default(0)
+  isActive         Boolean    @default(true)
+  
+  // SEO
+  seoTitle         String?
+  seoDescription   String?
+  seoH1            String?
+  seoKeywords      String?
+  ogImage          String?
+  
+  // Родительская услуга
+  serviceId        String
+  service          Service    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  // ФККО
+  fkkoItems        FkkoRow[]
+  pricing          PriceRow[]
+  faqItems         FaqItem[]
+  advantages       Advantage[]
+  
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+// ==================== ФККО ====================
+
+model FkkoRow {
+  id             String       @id @default(cuid())
+  code           String       // "81112311394"
+  name           String       // Наименование отхода
+  hazardClass    Int          // 1-5
+  description    String?
+  order          Int          @default(0)
+  
+  subcategoryId  String
+  subcategory    Subcategory  @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+}
+
+// ==================== ЦЕНЫ ====================
+
+model PriceRow {
+  id             String       @id @default(cuid())
+  serviceName    String       // "Вывоз чистого грунта"
+  unit           String       // "м³"
+  price          String       // "от 350 ₽"
+  order          Int          @default(0)
+  
+  serviceId      String?
+  service        Service?     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  subcategoryId  String?
+  subcategory    Subcategory? @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+}
+
+// ==================== FAQ ====================
+
+model FaqItem {
+  id             String       @id @default(cuid())
+  question       String
+  answer         String       // HTML (может содержать ссылки)
+  order          Int          @default(0)
+  
+  serviceId      String?
+  service        Service?     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  subcategoryId  String?
+  subcategory    Subcategory? @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+  pageKey        String?      // "home", "calculator" — для FAQ не привязанных к услугам
+}
+
+// ==================== ПРЕИМУЩЕСТВА ====================
+
+model Advantage {
+  id             String       @id @default(cuid())
+  title          String
+  description    String
+  icon           String?      // Имя иконки или SVG
+  order          Int          @default(0)
+  
+  serviceId      String?
+  service        Service?     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  subcategoryId  String?
+  subcategory    Subcategory? @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+  pageKey        String?      // "home" — для общих преимуществ
+}
+
+// ==================== БЛОГ ====================
+
+model BlogPost {
+  id             String       @id @default(cuid())
+  slug           String       @unique
+  title          String
+  description    String       // Краткое описание
+  content        String       // HTML из TipTap
+  coverImage     String?
+  coverImageAlt  String?
+  author         String       @default("DanMax")
+  readingTime    Int?         // Минуты
+  tags           String       // JSON array: ["ФККО", "грунт"]
+  isPublished    Boolean      @default(false)
+  publishedAt    DateTime?
+  
+  // SEO
+  seoTitle       String?
+  seoDescription String?
+  ogImage        String?
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+// ==================== КЕЙСЫ ====================
+
+model Case {
+  id             String       @id @default(cuid())
+  title          String       // "ЖК Лесная поляна — вывоз грунта"
+  image          String?
+  imageAlt       String?
+  volume         String?      // "12 000 м³"
+  duration       String?      // "14 дней"
+  description    String?      // Подробности
+  order          Int          @default(0)
+  isActive       Boolean      @default(true)
+  
+  serviceId      String?
+  service        Service?     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  createdAt      DateTime     @default(now())
+}
+
+// ==================== КЛИЕНТЫ ====================
+
+model Client {
+  id             String       @id @default(cuid())
+  name           String
+  logo           String?      // Путь к файлу
+  website        String?
+  order          Int          @default(0)
+  isActive       Boolean      @default(true)
+}
+
+// ==================== НАСТРОЙКИ ====================
+
+model SiteSetting {
+  id             String       @id @default(cuid())
+  key            String       @unique
+  value          String
+  label          String       // Человекочитаемое название для админки
+  group          String       // "contacts", "social", "company", "promo"
+  order          Int          @default(0)
+}
+
+// ==================== ЗАЯВКИ С САЙТА ====================
+
+model FormSubmission {
+  id             String       @id @default(cuid())
+  name           String
+  phone          String
+  serviceType    String?
+  comment        String?
+  source         String?      // URL страницы откуда отправлена
+  isRead         Boolean      @default(false)
+  isArchived     Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+}
+
+// ==================== МЕДИА ====================
+
+model MediaFile {
+  id             String       @id @default(cuid())
+  filename       String       // Оригинальное имя
+  filepath       String       // Путь на сервере
+  url            String       // URL для <img src>
+  mimetype       String
+  size           Int          // Байты
+  width          Int?
+  height         Int?
+  alt            String?
+  folder         String       @default("general") // hero, cases, blog, clients, general
+  createdAt      DateTime     @default(now())
+}
