@@ -9,11 +9,17 @@ import {
   FolderOpen,
   Briefcase,
   Users,
-  Settings,
+  MessageSquare,
+  Image,
   Inbox,
+  Settings,
   LogOut,
+  ExternalLink,
+  Menu,
+  X,
 } from "lucide-react"
 import { signOut } from "next-auth/react"
+import { useState } from "react"
 
 const navigation = [
   { name: "Дашборд", href: "/admin", icon: LayoutDashboard },
@@ -21,61 +27,114 @@ const navigation = [
   { name: "Блог", href: "/admin/blog", icon: FileText },
   { name: "Кейсы", href: "/admin/cases", icon: Briefcase },
   { name: "Клиенты", href: "/admin/clients", icon: Users },
+  { name: "FAQ", href: "/admin/faq", icon: MessageSquare },
+  { name: "Медиа", href: "/admin/media", icon: Image },
+  { name: "Заявки", href: "/admin/submissions", icon: Inbox, badge: true },
   { name: "Настройки", href: "/admin/settings", icon: Settings },
-  { name: "Заявки", href: "/admin/submissions", icon: Inbox },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  unreadCount?: number
+  onToggle?: () => void
+  isOpen?: boolean
+}
+
+export function Sidebar({ unreadCount = 0, onToggle, isOpen = true }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <div className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gray-900 lg:translate-x-0">
-      <div className="flex h-16 items-center px-6">
-        <Link href="/admin" className="text-xl font-bold text-white">
-          DanMax Admin
-        </Link>
-      </div>
+    <>
+      {/* Overlay для мобильных */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={onToggle}
+        />
+      )}
 
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {navigation.map((item) => {
-          const isActive =
-            item.href === "/admin"
-              ? pathname === "/admin"
-              : pathname.startsWith(item.href)
+      {/* Сайдбар */}
+      <aside
+        className={clsx(
+          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gray-900 transition-transform duration-300 lg:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {/* Заголовок с кнопкой закрытия для мобильных */}
+        <div className="flex h-16 items-center justify-between px-6">
+          <Link href="/admin" className="text-xl font-bold text-white">
+            DanMax Admin
+          </Link>
+          <button
+            onClick={onToggle}
+            className="rounded-lg p-1 text-gray-400 hover:bg-gray-800 hover:text-white lg:hidden"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={clsx(
-                "group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-gray-800 text-white"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              )}
-            >
-              <item.icon
+        {/* Навигация */}
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+          {navigation.map((item) => {
+            const isActive =
+              item.href === "/admin"
+                ? pathname === "/admin"
+                : pathname.startsWith(item.href)
+
+            const showBadge = item.badge && unreadCount > 0
+
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
                 className={clsx(
-                  "mr-3 h-5 w-5 shrink-0",
-                  isActive ? "text-white" : "text-gray-400 group-hover:text-white"
+                  "group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-gray-800 text-white border-l-3 border-primary-500"
+                    : "text-gray-300 hover:bg-gray-800 hover:text-white"
                 )}
-                aria-hidden="true"
-              />
-              {item.name}
-            </Link>
-          )
-        })}
-      </nav>
+              >
+                <item.icon
+                  className={clsx(
+                    "mr-3 h-5 w-5 shrink-0",
+                    isActive ? "text-white" : "text-gray-400 group-hover:text-white"
+                  )}
+                  aria-hidden="true"
+                />
+                <span className="flex-1">{item.name}</span>
+                {showBadge && (
+                  <span className="ml-2 rounded-full bg-primary-600 px-2 py-0.5 text-xs font-medium text-white">
+                    {unreadCount}
+                  </span>
+                )}
+              </Link>
+            )
+          })}
+        </nav>
 
-      <div className="border-t border-gray-800 p-3">
-        <button
-          onClick={() => signOut({ callbackUrl: "/admin/login" })}
-          className="flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
-        >
-          <LogOut className="mr-3 h-5 w-5 shrink-0 text-gray-400" />
-          Выйти
-        </button>
-      </div>
-    </div>
+        {/* Разделитель и ссылка на сайт */}
+        <div className="border-t border-gray-800 p-3">
+          <Link
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+          >
+            <ExternalLink className="mr-3 h-5 w-5 shrink-0 text-gray-400" />
+            Открыть сайт
+          </Link>
+        </div>
+
+        {/* Кнопка выхода */}
+        <div className="border-t border-gray-800 p-3">
+          <button
+            onClick={() => signOut({ callbackUrl: "/admin/login" })}
+            className="flex w-full items-center rounded-md px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+          >
+            <LogOut className="mr-3 h-5 w-5 shrink-0 text-gray-400" />
+            Выйти
+          </button>
+        </div>
+      </aside>
+    </>
   )
 }
