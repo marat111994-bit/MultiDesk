@@ -1,132 +1,137 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
-import { Container } from "@/components/container";
-import { HeroSection } from "@/components/sections";
-import { RelatedPosts } from "@/components/blog/RelatedPosts";
-import { ContactForm } from "@/components/sections";
-import { blogPosts } from "@/data/blog";
+import { notFound } from "next/navigation"
+import { Container } from "@/components/container"
+import { Breadcrumbs } from "@/components/layout/Breadcrumbs"
+import { BlogCard } from "@/components/blog"
+import { getBlogPostBySlug, getBlogPosts } from "@/lib/data"
+import { format } from "date-fns"
+import { ru } from "date-fns/locale"
 
-interface PageProps {
-  params: Promise<{ slug: string }>;
+interface BlogPostPageProps {
+  params: Promise<{ slug: string }>
 }
 
-// Генерация статических параметров для SSG
 export async function generateStaticParams() {
-  return blogPosts.map((post) => ({
+  const { getBlogPosts } = await import("@/lib/data")
+  const posts = await getBlogPosts()
+  
+  return posts.map((post) => ({
     slug: post.slug,
-  }));
+  }))
 }
 
-// Генерация метаданных
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const post = blogPosts.find((p) => p.slug === slug);
+export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  const { slug } = await params
+  const post = await getBlogPostBySlug(slug)
 
   if (!post) {
-    return {
-      title: "Статья не найдена | DanMax",
-    };
+    notFound()
   }
 
-  return {
-    title: `${post.title} | DanMax`,
-    description: post.description,
-    openGraph: {
-      title: post.title,
-      description: post.description,
-      url: `https://danmax.moscow/blog/${post.slug}/`,
-      siteName: "DanMax",
-      locale: "ru_RU",
-      type: "article",
-      publishedTime: post.date,
-      authors: [post.author],
-    },
-    alternates: {
-      canonical: `https://danmax.moscow/blog/${post.slug}/`,
-    },
-  };
-}
+  const breadcrumbs: { label: string; href?: string }[] = [
+    { label: "Главная", href: "/" },
+    { label: "Блог", href: "/blog/" },
+    { label: post.title },
+  ]
 
-export default async function BlogPostPage({ params }: PageProps) {
-  const { slug } = await params;
-  const post = blogPosts.find((p) => p.slug === slug);
-
-  if (!post) {
-    notFound();
-  }
+  // Получаем связанные посты
+  const relatedPosts = await getBlogPosts(3)
 
   return (
     <>
       <Container>
-        <Breadcrumbs
-          items={[
-            { label: "Главная", href: "/" },
-            { label: "Блог", href: "/blog/" },
-            { label: post.title },
-          ]}
-        />
+        <Breadcrumbs items={breadcrumbs} />
       </Container>
 
-      {/* Hero Section для блога */}
-      <HeroSection
-        variant="blog"
-        title={post.title}
-        date={new Date(post.date).toLocaleDateString("ru-RU", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })}
-        author={post.author}
-        readingTime={post.readingTime}
-      />
-
-      {/* Контент статьи */}
       <article className="py-12">
         <Container>
-          <div className="max-w-4xl mx-auto">
-            {/* Теги */}
-            <div className="flex flex-wrap gap-2 mb-8">
-              {post.tags.map((tag) => (
+          {/* Header */}
+          <header className="mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              {post.title}
+            </h1>
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <span>{post.author}</span>
+              {post.publishedAt && (
+                <>
+                  <span>•</span>
+                  <time dateTime={post.publishedAt.toISOString()}>
+                    {format(post.publishedAt, "dd MMMM yyyy", { locale: ru })}
+                  </time>
+                </>
+              )}
+              {post.readingTime && (
+                <>
+                  <span>•</span>
+                  <span>{post.readingTime} мин</span>
+                </>
+              )}
+            </div>
+          </header>
+
+          {/* Cover Image */}
+          {post.coverImage && (
+            <div className="mb-8">
+              <img
+                src={post.coverImage}
+                alt={post.coverImageAlt || post.title}
+                className="w-full h-96 object-cover rounded-lg"
+              />
+            </div>
+          )}
+
+          {/* Tags */}
+          {post.tags && (
+            <div className="mb-8 flex flex-wrap gap-2">
+              {JSON.parse(post.tags).map((tag: string, i: number) => (
                 <span
-                  key={tag}
-                  className="text-sm bg-primary-50 text-primary-700 px-3 py-1 rounded-full"
+                  key={i}
+                  className="inline-flex rounded-full bg-primary-100 px-3 py-1 text-sm font-medium text-primary-700"
                 >
-                  #{tag}
+                  {tag}
                 </span>
               ))}
             </div>
+          )}
 
-            {/* HTML контент */}
-            <div
-              className="prose prose-lg max-w-none
-                prose-headings:font-bold prose-headings:text-gray-900
-                prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4
-                prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3
-                prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-4
-                prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-4
-                prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-4
-                prose-li:text-gray-700 prose-li:mb-2
-                prose-a:text-primary-500 prose-a:underline prose-a:hover:text-primary-700
-                prose-table:w-full prose-table:border-collapse prose-table:my-6
-                prose-th:border prose-th:border-gray-300 prose-th:bg-gray-100 prose-th:px-4 prose-th:py-2 prose-th:text-left
-                prose-td:border prose-td:border-gray-300 prose-td:px-4 prose-td:py-2
-                prose-strong:font-semibold"
-              dangerouslySetInnerHTML={{ __html: post.content }}
-            />
-          </div>
+          {/* Content */}
+          <div
+            className="prose prose-lg max-w-none"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
         </Container>
       </article>
 
-      {/* Похожие статьи */}
-      <RelatedPosts posts={blogPosts} currentSlug={post.slug} />
-
-      {/* Contact Form */}
-      <ContactForm
-        title="Остались вопросы?"
-        subtitle="Задайте вопрос эксперту — ответим в течение 15 минут"
-        variant="compact"
-      />
+      {/* Related Posts */}
+      {relatedPosts.length > 0 && (
+        <section className="py-12 bg-gray-50">
+          <Container>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Читайте также
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {relatedPosts
+                .filter(p => p.slug !== post.slug)
+                .slice(0, 3)
+                .map((relatedPost) => (
+                  <BlogCard
+                    key={relatedPost.slug}
+                    post={{
+                      ...relatedPost,
+                      slug: relatedPost.slug,
+                      title: relatedPost.title,
+                      description: relatedPost.description,
+                      date: relatedPost.publishedAt?.toISOString() || relatedPost.createdAt.toISOString(),
+                      author: relatedPost.author,
+                      readingTime: `${relatedPost.readingTime || 5} мин`,
+                      tags: JSON.parse(relatedPost.tags),
+                      content: relatedPost.content,
+                    }}
+                  />
+                ))}
+            </div>
+          </Container>
+        </section>
+      )}
     </>
-  );
+  )
 }
