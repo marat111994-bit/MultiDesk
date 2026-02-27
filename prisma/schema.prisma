@@ -13,12 +13,13 @@ datasource db {
 // ==================== АВТОРИЗАЦИЯ ====================
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  password      String   // bcrypt hash
+  id            String        @id @default(cuid())
+  email         String        @unique
+  password      String        // bcrypt hash
   name          String
-  role          String   @default("admin") // admin, editor
-  createdAt     DateTime @default(now())
+  role          String        @default("admin") // admin, editor
+  createdAt     DateTime      @default(now())
+  activityLogs  ActivityLog[]
 }
 
 // ==================== УСЛУГИ ====================
@@ -242,4 +243,17 @@ model MediaFile {
   alt            String?
   folder         String       @default("general") // hero, cases, blog, clients, general
   createdAt      DateTime     @default(now())
+}
+
+// ==================== ЛОГИРОВАНИЕ ====================
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String   // "created", "updated", "deleted"
+  entity      String   // "service", "blog", "case", etc.
+  entityId    String?
+  details     String?  // JSON с деталями
+  createdAt   DateTime @default(now())
 }

@@ -3,6 +3,7 @@
 import { SessionProvider } from "next-auth/react"
 import { Sidebar } from "@/components/admin/Sidebar"
 import { Header } from "@/components/admin/Header"
+import { ToastProvider } from "@/components/admin/Toast"
 import { useState } from "react"
 import { useUnreadSubmissions } from "@/components/admin/useUnreadSubmissions"
 
@@ -16,24 +17,26 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <SessionProvider>
-      <div className="min-h-screen bg-gray-50">
-        {/* Сайдбар */}
-        <Sidebar
-          isOpen={sidebarOpen}
-          onToggle={() => setSidebarOpen(!sidebarOpen)}
-          unreadCount={unreadCount}
-        />
+      <ToastProvider>
+        <div className="min-h-screen bg-gray-50">
+          {/* Сайдбар */}
+          <Sidebar
+            isOpen={sidebarOpen}
+            onToggle={() => setSidebarOpen(!sidebarOpen)}
+            unreadCount={unreadCount}
+          />
 
-        {/* Контентная область */}
-        <div className="lg:pl-64">
-          <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-          <main className="py-6">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              {children}
-            </div>
-          </main>
+          {/* Контентная область */}
+          <div className="lg:pl-64">
+            <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+            <main className="py-6">
+              <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                {children}
+              </div>
+            </main>
+          </div>
         </div>
-      </div>
+      </ToastProvider>
     </SessionProvider>
   )
 }
