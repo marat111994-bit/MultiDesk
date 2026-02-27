@@ -46,3 +46,5 @@ server.log
 
 # Sitemap (generated)
 public/sitemap.xml
+
+/src/generated/prisma
