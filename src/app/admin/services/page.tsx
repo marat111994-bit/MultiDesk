@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Fragment as ReactFragment } from "react"
 import Link from "next/link"
 import { Pencil, Trash2, Plus, Copy, ChevronRight, ChevronDown } from "lucide-react"
 import { clsx } from "clsx"
@@ -130,8 +130,8 @@ export default function AdminServicesPage() {
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {services.map((service) => (
-              <>
-                <tr key={service.id} className="hover:bg-gray-50">
+              <ReactFragment key={service.id}>
+                <tr className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <button
                       onClick={() => setExpanded(expanded === service.id ? null : service.id)}
@@ -217,7 +217,7 @@ export default function AdminServicesPage() {
                     </td>
                   </tr>
                 )}
-              </>
+              </ReactFragment>
             ))}
           </tbody>
         </table>

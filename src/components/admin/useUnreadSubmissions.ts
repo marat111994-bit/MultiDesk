@@ -9,10 +9,13 @@ export function useUnreadSubmissions() {
   useEffect(() => {
     async function fetchCount() {
       try {
-        const res = await fetch("/api/admin/submissions")
+        const res = await fetch("/api/admin/submissions?status=new")
         if (res.ok) {
           const data = await res.json()
-          const unreadCount = data.filter((s: any) => !s.isRead).length
+          // data.submissions — массив, data.pagination — мета
+          const unreadCount = Array.isArray(data.submissions) 
+            ? data.submissions.length 
+            : 0
           setCount(unreadCount)
         }
       } catch (error) {

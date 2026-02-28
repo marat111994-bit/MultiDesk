@@ -93,7 +93,7 @@ export default async function HomePage() {
         variant="service"
         title="Вывоз и утилизация строительных отходов в Москве"
         subtitle="Грунт, бетон, кирпич, асфальт — вывозим и утилизируем с полным пакетом документов. Собственный автопарк, все лицензии."
-        image="/images/hero-home.jpg"
+        image="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=1200&q=80"
         imageAlt="Вывоз строительных отходов DanMax"
         badges={["Лицензия 1–5 класс", "от 350 ₽/м³", "120+ единиц техники", "Работа 24/7"]}
         ctaPrimary={{ text: "Рассчитать стоимость" }}
@@ -153,7 +153,7 @@ export default async function HomePage() {
       <WhyUs
         title="Почему выбирают DanMax"
         advantages={advantages}
-        image="/images/why-us/home.jpg"
+        image="https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800&q=80"
         imageAlt="Команда DanMax"
       />
 
