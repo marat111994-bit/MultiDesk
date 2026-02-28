@@ -13,7 +13,7 @@ export function AnalyticsProviders({ yandexId, gaId }: AnalyticsProvidersProps) 
 
   // Загрузка Яндекс.Метрики
   useEffect(() => {
-    if (!yandexId || typeof window === "undefined") return;
+    if (!yandexId || yandexId === "your_yandex_metrika_id_here" || typeof window === "undefined") return;
 
     const script = document.createElement("script");
     script.type = "text/javascript";
