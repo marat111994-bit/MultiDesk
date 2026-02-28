@@ -22,6 +22,7 @@ import { useState, useEffect } from "react"
 
 const navigation = [
   { name: "Дашборд", href: "/admin", icon: LayoutDashboard },
+  { name: "Главная", href: "/admin/home", icon: LayoutDashboard },
   { name: "Услуги", href: "/admin/services", icon: FolderOpen },
   { name: "Блог", href: "/admin/blog", icon: FileText },
   { name: "Кейсы", href: "/admin/cases", icon: Briefcase },

@@ -11,7 +11,12 @@ export const asfaltnyjBoj: Service = {
     "Вывоз асфальтового боя, крошки. Фрезерование. ФККО 83020001714. От 450 ₽/м³.",
   heroImage: "/images/services/asfaltnyj-boj/hero.svg",
   heroImageAlt: "Вывоз асфальтового боя с дороги",
-  badges: ["ФККО 83020001714", "от 450 ₽/м³", "Повторное использование"],
+  topBadge: "Собственный автопарк • 120+ единиц",
+  badges: [
+    { value: "ФККО 83020001714", label: "Код отхода", icon: "file-text" },
+    { value: "от 450 ₽/м³", label: "Цена", icon: "dollar-sign" },
+    { value: "Повторное использование", label: "Экология", icon: "recycle" },
+  ],
   seo: {
     title: "Вывоз и утилизация асфальтового боя в Москве — цены, ФККО | DanMax",
     description:

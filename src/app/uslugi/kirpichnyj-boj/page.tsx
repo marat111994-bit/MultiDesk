@@ -14,18 +14,16 @@ import {
 } from "@/components/sections";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { kirpichnyjBoj } from "@/data/services/kirpichnyj-boj";
+import { getServiceBySlug } from "@/lib/data";
 import { steps } from "@/data/steps";
-import { cases, clients } from "@/data";
-
-const service = kirpichnyjBoj;
+import { clients } from "@/data";
 
 export const metadata: Metadata = {
-  title: service.seo.title,
-  description: service.seo.description,
+  title: "Вывоз и утилизация кирпичного боя в Москве — цены, ФККО | DanMax",
+  description: "Вывоз кирпичного боя в Москве и МО: строительный, огнеупорный. Дробление, переработка. ФККО 81220101205. Лицензия. От 450 ₽/м³.",
   openGraph: {
-    title: service.seo.title,
-    description: service.seo.description,
+    title: "Вывоз и утилизация кирпичного боя в Москве — цены, ФККО | DanMax",
+    description: "Вывоз кирпичного боя в Москве и МО: строительный, огнеупорный. Дробление, переработка. ФККО 81220101205. Лицензия. От 450 ₽/м³.",
     url: "https://danmax.moscow/uslugi/kirpichnyj-boj/",
     siteName: "DanMax",
     locale: "ru_RU",
@@ -36,7 +34,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function KirpichnyjBojPage() {
+export default async function KirpichnyjBojPage() {
+  const service = await getServiceBySlug("kirpichnyj-boj");
+
+  if (!service) {
+    return <div>Услуга не найдена</div>;
+  }
   return (
     <>
       <Container>
@@ -51,21 +54,28 @@ export default function KirpichnyjBojPage() {
 
       <HeroSection
         variant="service"
-        title={service.seo.h1}
+        title={service.seoH1 || service.title}
         subtitle={service.shortDescription}
-        image={service.heroImage}
-        imageAlt={service.heroImageAlt}
+        image={service.heroImage || undefined}
+        imageAlt={service.heroImageAlt || undefined}
         badges={service.badges}
+        topBadge={service.topBadge}
         ctaPrimary={{ text: "Рассчитать стоимость" }}
         ctaSecondary={{ text: "Наши услуги", href: "/uslugi/" }}
         ctaTertiary={{ text: "Смотреть цены", href: "#pricing" }}
       />
 
-      <TrustNumbers numbers={service.trustNumbers} />
+      {service.trustNumbers && service.trustNumbers.length > 0 && (
+        <TrustNumbers numbers={service.trustNumbers} />
+      )}
 
       <WhyUs
         title="Почему выбирают DanMax для вывоза кирпичного боя"
-        advantages={service.advantages}
+        advantages={service.advantages.map(a => ({
+          title: a.title,
+          description: a.description,
+          icon: a.icon || "truck",
+        }))}
         image="/images/why-us/kirpichnyj-boj.svg"
         imageAlt="Вывоз кирпичного боя DanMax"
       />
@@ -78,7 +88,11 @@ export default function KirpichnyjBojPage() {
       <section id="pricing">
         <PricingTable
           title="Цены на вывоз кирпичного боя в Москве"
-          rows={service.pricing}
+          rows={service.pricing.map(p => ({
+            service: p.serviceName,
+            unit: p.unit,
+            price: parseInt(p.price) || 0,
+          }))}
           disclaimer="Минимальный заказ — 10 м³. Точная стоимость зависит от объёма, типа кирпича и расстояния."
           ctaText="Рассчитать точную стоимость"
         />
@@ -104,7 +118,7 @@ export default function KirpichnyjBojPage() {
                       key={i}
                       className="text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded"
                     >
-                      {badge}
+                      {badge.value}
                     </span>
                   ))}
                 </div>
@@ -126,13 +140,23 @@ export default function KirpichnyjBojPage() {
 
       <CasesSection
         title="Наши проекты по вывозу кирпичного боя"
-        cases={cases.filter((c) => c.serviceType === "kirpichnyj-boj")}
+        cases={(service.cases || []).map((c) => ({
+          title: c.title,
+          image: c.image || "",
+          volume: c.volume || "",
+          duration: c.duration || "",
+          serviceType: c.serviceId || "",
+          description: c.description || undefined,
+        }))}
         clients={clients}
       />
 
       <FaqSection
         title="Частые вопросы о вывозе кирпичного боя"
-        items={service.faq}
+        items={service.faqItems.map(f => ({
+          question: f.question,
+          answer: f.answer,
+        }))}
       />
 
       <ContactForm

@@ -49,11 +49,12 @@ export default async function SubcategoryPage({ params }: SubcategoryPageProps) 
 
       <HeroSection
         variant="service"
-        title={subcategory.title}
+        title={subcategory.seoH1 || subcategory.title}
         subtitle={subcategory.shortDescription}
         image={subcategory.heroImage || undefined}
         imageAlt={subcategory.heroImageAlt || undefined}
-        badges={JSON.parse(subcategory.badges)}
+        badges={subcategory.badges}
+        topBadge={subcategory.topBadge}
         ctaPrimary={{ text: "Заказать" }}
       />
 

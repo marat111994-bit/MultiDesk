@@ -71,6 +71,7 @@ export async function PUT(
         heroImage: body.heroImage,
         heroImageAlt: body.heroImageAlt,
         badges: JSON.stringify(body.badges || []),
+        trustNumbers: JSON.stringify(body.trustNumbers || []),
         order: body.order,
         isActive: body.isActive,
         seoTitle: body.seoTitle,

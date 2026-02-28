@@ -3,19 +3,21 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
+import type { Badge } from "@/types/service";
 
 type HeroVariant = "service" | "blog" | "calculator" | "about";
 
 interface HeroSectionProps {
   title: string;
   subtitle?: string;
-  image?: string;
+  image?: string | null;
   imageAlt?: string;
-  badges?: string[];
-  ctaPrimary?: { text: string; onClick?: () => void };
+  badges?: Badge[] | string[];
+  ctaPrimary?: { text: string; onClick?: () => void; href?: string };
   ctaSecondary?: { text: string; href: string };
   ctaTertiary?: { text: string; href: string };
   variant?: HeroVariant;
+  topBadge?: string;
   // Для blog variant
   date?: string;
   author?: string;
@@ -41,6 +43,47 @@ const itemVariants = {
   },
 };
 
+// Анимации для service variant (появление при загрузке)
+const serviceHeroVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const serviceItemVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" as any },
+  },
+};
+
+const imageVariants = {
+  hidden: { scale: 1.05 },
+  visible: {
+    scale: 1,
+    transition: { duration: 1.5, ease: "easeOut" as any },
+  },
+};
+
+// Иконки для бейджей
+const badgeIcons: Record<string, string> = {
+  "shield-check": "📋",
+  "dollar-sign": "💰",
+  "clock": "⚡",
+  "truck": "🚛",
+  "leaf": "🌿",
+  "file-text": "📄",
+  "award": "🏆",
+  "recycle": "♻️",
+};
+
 export function HeroSection({
   title,
   subtitle,
@@ -51,6 +94,7 @@ export function HeroSection({
   ctaSecondary,
   ctaTertiary,
   variant = "service",
+  topBadge,
   date,
   author,
   readingTime,
@@ -129,7 +173,7 @@ export function HeroSection({
   // Calculator variant
   if (variant === "calculator") {
     return (
-      <section className="bg-gray-50 py-16 lg:py-24">
+      <section className="bg-gradient-to-br from-gray-900 via-primary-900 to-gray-800 py-16 lg:py-24">
         <div className="mx-auto w-full max-w-[1280px] px-4 md:px-8 xl:px-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -137,11 +181,11 @@ export function HeroSection({
             transition={{ duration: 0.5 }}
             className="max-w-3xl"
           >
-            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
+            <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight">
               {title}
             </h1>
             {subtitle && (
-              <p className="text-lg text-gray-600 mt-4">{subtitle}</p>
+              <p className="text-lg text-gray-300 mt-4">{subtitle}</p>
             )}
           </motion.div>
         </div>
@@ -152,160 +196,195 @@ export function HeroSection({
   // About variant
   if (variant === "about") {
     return (
-      <section className="bg-gray-50 py-16 lg:py-24">
-        <div className="mx-auto w-full max-w-[1280px] px-4 md:px-8 xl:px-20">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-6"
+      <section className="relative min-h-[85vh] flex items-center overflow-hidden">
+        {/* Фоновое изображение */}
+        {image && (
+          <motion.div
+            className="absolute inset-0"
+            initial="hidden"
+            animate="visible"
+            variants={imageVariants}
+          >
+            <Image
+              src={image}
+              alt={imageAlt}
+              fill
+              className="object-cover object-center"
+              priority
+              quality={85}
+            />
+          </motion.div>
+        )}
+
+        {/* Градиентный overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/70 to-gray-900/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 via-transparent to-transparent" />
+
+        {/* Контент */}
+        <div className="relative z-10 container mx-auto px-4 py-20">
+          <motion.div
+            variants={serviceHeroVariants}
+            initial="hidden"
+            animate="visible"
+            className="max-w-2xl"
+          >
+            <motion.h1
+              variants={serviceItemVariants}
+              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight"
             >
-              <motion.h1
-                variants={itemVariants}
-                className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight"
+              {title}
+            </motion.h1>
+            {subtitle && (
+              <motion.p
+                variants={serviceItemVariants}
+                className="text-lg md:text-xl text-gray-300 mt-4 max-w-xl leading-relaxed"
               >
-                {title}
-              </motion.h1>
-              {subtitle && (
-                <motion.p
-                  variants={itemVariants}
-                  className="text-lg text-gray-600"
-                >
-                  {subtitle}
-                </motion.p>
-              )}
-            </motion.div>
-            {image && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="relative aspect-video lg:aspect-square rounded-2xl overflow-hidden shadow-xl"
-              >
-                <Image
-                  src={image}
-                  alt={imageAlt}
-                  fill
-                  className="object-cover"
-                />
-              </motion.div>
+                {subtitle}
+              </motion.p>
             )}
-          </div>
+          </motion.div>
         </div>
       </section>
     );
   }
 
-  // Service variant (default)
+  // Service variant (default) — Full-width фото + overlay
   return (
-    <section className="bg-gray-50 min-h-[600px] flex items-center py-16 lg:py-24">
-      <div className="mx-auto w-full max-w-[1280px] px-4 md:px-8 xl:px-20">
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-center">
-          {/* Левая часть: текст */}
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="lg:w-[55%] space-y-6"
-          >
-            <motion.h1
-              variants={itemVariants}
-              className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight"
-            >
-              {title}
-            </motion.h1>
+    <section className="relative min-h-[85vh] flex items-center overflow-hidden">
+      {/* Фоновое изображение или fallback */}
+      {image ? (
+        <motion.div
+          className="absolute inset-0"
+          initial="hidden"
+          animate="visible"
+          variants={imageVariants}
+        >
+          <Image
+            src={image}
+            alt={imageAlt}
+            fill
+            className="object-cover object-right-center"
+            priority
+            loading="eager"
+            quality={85}
+            sizes="100vw"
+          />
+        </motion.div>
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-primary-900 to-gray-800 pattern-dots" />
+      )}
 
-            {subtitle && (
-              <motion.p
-                variants={itemVariants}
-                className="text-lg text-gray-600"
-              >
-                {subtitle}
-              </motion.p>
-            )}
+      {/* Градиентный overlay — слева тёмный, справа прозрачный */}
+      <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/70 to-gray-900/10" />
 
-            {/* Кнопки */}
-            {(ctaPrimary || ctaSecondary || ctaTertiary) && (
-              <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 mt-8">
-                {ctaPrimary && (
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={ctaPrimary.onClick}
-                    className="w-full sm:w-auto"
-                  >
-                    {ctaPrimary.text}
-                  </Button>
-                )}
-                {ctaSecondary && (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    href={ctaSecondary.href}
-                    className="w-full sm:w-auto"
-                  >
-                    {ctaSecondary.text}
-                  </Button>
-                )}
-                {ctaTertiary && (
-                  <a
-                    href={ctaTertiary.href}
-                    className="text-primary-500 hover:text-primary-700 hover:underline font-medium self-center sm:self-auto transition-colors"
-                  >
-                    {ctaTertiary.text}
-                  </a>
-                )}
-              </motion.div>
-            )}
+      {/* Дополнительный вертикальный градиент снизу (для бейджей) */}
+      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 via-transparent to-transparent" />
 
-            {/* Badges */}
-            {badges && badges.length > 0 && (
-              <motion.div
-                variants={itemVariants}
-                className="flex flex-wrap gap-6 mt-6"
-              >
-                {badges.map((badge, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2"
-                  >
-                    <svg
-                      className="w-5 h-5 text-green-500 flex-shrink-0"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    <span className="text-sm text-gray-600">{badge}</span>
-                  </div>
-                ))}
-              </motion.div>
-            )}
-          </motion.div>
-
-          {/* Правая часть: изображение */}
-          {image && (
+      {/* Контент поверх */}
+      <div className="relative z-10 container mx-auto px-4 py-20">
+        <motion.div
+          variants={serviceHeroVariants}
+          initial="hidden"
+          animate="visible"
+          className="max-w-2xl"
+        >
+          {/* Мини-тег сверху */}
+          {topBadge && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="lg:w-[45%] w-full"
+              variants={serviceItemVariants}
+              className="inline-flex items-center bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-sm text-white/90 mb-6"
             >
-              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-xl bg-gray-200">
-                <Image
-                  src={image}
-                  alt={imageAlt}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 55vw"
-                />
-              </div>
+              {topBadge}
             </motion.div>
           )}
-        </div>
+
+          {/* Заголовок H1 */}
+          <motion.h1
+            variants={serviceItemVariants}
+            className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight"
+          >
+            {title}
+          </motion.h1>
+
+          {/* Подзаголовок */}
+          {subtitle && (
+            <motion.p
+              variants={serviceItemVariants}
+              className="text-lg md:text-xl text-gray-300 mt-4 max-w-xl leading-relaxed"
+            >
+              {subtitle}
+            </motion.p>
+          )}
+
+          {/* Кнопки CTA (только 2) */}
+          {(ctaPrimary || ctaSecondary) && (
+            <motion.div
+              variants={serviceItemVariants}
+              className="flex flex-col sm:flex-row gap-4 mt-8"
+            >
+              {ctaPrimary && (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={ctaPrimary.onClick}
+                  href={ctaPrimary.href}
+                  className="bg-accent-500 hover:bg-accent-600 text-white font-semibold px-8 py-4 rounded-xl text-lg shadow-lg shadow-accent-500/25 transition-all hover:scale-[1.02] hover:shadow-xl"
+                >
+                  {ctaPrimary.text}
+                </Button>
+              )}
+              {ctaSecondary && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  href={ctaSecondary.href}
+                  className="bg-white/10 backdrop-blur-sm border border-white/25 text-white px-8 py-4 rounded-xl text-lg hover:bg-white/20 transition-all"
+                >
+                  {ctaSecondary.text}
+                </Button>
+              )}
+            </motion.div>
+          )}
+
+          {/* Бейджи доверия (3 штуки) */}
+          {badges && badges.length > 0 && (
+            <motion.div
+              variants={serviceItemVariants}
+              className="mt-10 flex flex-col md:flex-row gap-4"
+            >
+              {badges.slice(0, 3).map((badge, index) => {
+                // Поддержка старого формата (string[]) и нового (Badge[])
+                const badgeData: Badge = typeof badge === "string"
+                  ? { value: badge, label: "", icon: "shield-check" }
+                  : badge;
+
+                const icon = badgeIcons[badgeData.icon] || "📋";
+
+                return (
+                  <motion.div
+                    key={index}
+                    variants={serviceItemVariants}
+                    className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-5 py-3 flex items-center gap-3 min-w-[140px]"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-accent-500/20 text-accent-400 flex items-center justify-center text-lg flex-shrink-0">
+                      {icon}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-white font-bold text-sm">
+                        {badgeData.value}
+                      </span>
+                      {badgeData.label && (
+                        <span className="text-gray-400 text-xs">
+                          {badgeData.label}
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          )}
+        </motion.div>
       </div>
     </section>
   );

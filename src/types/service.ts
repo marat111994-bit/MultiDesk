@@ -3,6 +3,12 @@ import type { PriceRow } from "./pricing";
 import type { FaqItem } from "./faq";
 import type { Advantage, TrustNumber } from "./common";
 
+export interface Badge {
+  value: string;
+  label: string;
+  icon: string;
+}
+
 export interface Service {
   id: string;
   slug: string;
@@ -12,7 +18,8 @@ export interface Service {
   shortDescription: string;
   heroImage: string;
   heroImageAlt: string;
-  badges: string[];
+  topBadge?: string;
+  badges: Badge[];
   seo: {
     title: string;
     description: string;
@@ -36,7 +43,8 @@ export interface Subcategory {
   shortDescription: string;
   heroImage: string;
   heroImageAlt: string;
-  badges: string[];
+  topBadge?: string;
+  badges: Badge[];
   seo: {
     title: string;
     description: string;
