@@ -1,0 +1,11 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /_next/
+Disallow: /api/
+
+# Host
+Host: https://danmax.moscow
+
+# Sitemaps
+Sitemap: https://danmax.moscow/sitemap.xml
