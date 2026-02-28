@@ -11,7 +11,12 @@ export const razreshitelnayaDokumentaciya: Service = {
     "Паспорт отходов, биотестирование, разрешение на перемещение. Аккредитованная лаборатория.",
   heroImage: "/images/services/dokumentaciya/hero.svg",
   heroImageAlt: "Оформление документации на отходы",
-  badges: ["Аккредитация", "от 5000 ₽", "Росприроднадзор"],
+  topBadge: "Аккредитованная лаборатория • Росприроднадзор",
+  badges: [
+    { value: "Аккредитация", label: "Статус", icon: "shield-check" },
+    { value: "от 5000 ₽", label: "Цена", icon: "dollar-sign" },
+    { value: "Росприроднадзор", label: "Согласование", icon: "file-text" },
+  ],
   seo: {
     title: "Разрешительная документация на отходы в Москве — паспорт, биотестирование | DanMax",
     description:
@@ -115,7 +120,12 @@ export const razreshitelnayaDokumentaciya: Service = {
         "Биотестирование отходов в аккредитованной лаборатории. Протокол за 3–5 дней.",
       heroImage: "/images/services/dokumentaciya/biotestirovanie.svg",
       heroImageAlt: "Биотестирование отходов в лаборатории",
-      badges: ["Аккредитация", "от 5000 ₽", "3–5 дней"],
+      topBadge: "Аккредитованная лаборатория • Росприроднадзор",
+      badges: [
+        { value: "Аккредитация", label: "Статус", icon: "shield-check" },
+        { value: "от 5000 ₽", label: "Цена", icon: "dollar-sign" },
+        { value: "3–5 дней", label: "Срок", icon: "clock" },
+      ],
       seo: {
         title: "Биотестирование отходов в Москве — аккредитованная лаборатория | DanMax",
         description:
@@ -214,7 +224,12 @@ export const razreshitelnayaDokumentaciya: Service = {
         "Паспорт отходов за 5 дней. Биотестирование, согласование.",
       heroImage: "/images/services/dokumentaciya/pasport.svg",
       heroImageAlt: "Паспорт отходов",
-      badges: ["от 8000 ₽", "5 дней", "Росприроднадзор"],
+      topBadge: "Аккредитованная лаборатория • Росприроднадзор",
+      badges: [
+        { value: "от 8000 ₽", label: "Цена", icon: "dollar-sign" },
+        { value: "5 дней", label: "Срок", icon: "clock" },
+        { value: "Росприроднадзор", label: "Согласование", icon: "file-text" },
+      ],
       seo: {
         title: "Паспорт отходов I–V класса в Москве — оформление, согласование | DanMax",
         description:
@@ -314,7 +329,12 @@ export const razreshitelnayaDokumentaciya: Service = {
         "Разрешение на перемещение отходов. Согласование. 10–15 дней.",
       heroImage: "/images/services/dokumentaciya/razreshenije.svg",
       heroImageAlt: "Разрешение на перемещение отходов",
-      badges: ["от 25000 ₽", "10–15 дней", "Росприроднадзор"],
+      topBadge: "Аккредитованная лаборатория • Росприроднадзор",
+      badges: [
+        { value: "от 25000 ₽", label: "Цена", icon: "dollar-sign" },
+        { value: "10–15 дней", label: "Срок", icon: "clock" },
+        { value: "Росприроднадзор", label: "Согласование", icon: "file-text" },
+      ],
       seo: {
         title: "Разрешение на перемещение отходов в Москве — оформление | DanMax",
         description:

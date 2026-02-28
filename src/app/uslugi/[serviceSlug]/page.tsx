@@ -43,9 +43,10 @@ export default async function ServicePage({ params }: ServicePageProps) {
         subtitle={service.shortDescription}
         image={service.heroImage || undefined}
         imageAlt={service.heroImageAlt || undefined}
-        badges={JSON.parse(service.badges)}
+        topBadge={service.topBadge}
+        badges={service.badges}
         ctaPrimary={{ text: "Заказать услугу" }}
-        ctaSecondary={{ text: "Наши цены", href: "#pricing" }}
+        ctaSecondary={{ text: "Смотреть цены ↓", href: "#pricing" }}
       />
 
       {/* Subcategories */}
@@ -69,12 +70,12 @@ export default async function ServicePage({ params }: ServicePageProps) {
                     {sub.shortDescription}
                   </p>
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {JSON.parse(sub.badges).map((badge: string, i: number) => (
+                    {sub.badges.slice(0, 2).map((badge, i) => (
                       <span
                         key={i}
                         className="inline-flex rounded-full bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700"
                       >
-                        {badge}
+                        {badge.value}
                       </span>
                     ))}
                   </div>

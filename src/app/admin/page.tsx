@@ -42,7 +42,8 @@ export default function AdminDashboardPage() {
         }
 
         if (submissionsRes.ok) {
-          const submissionsData = await submissionsRes.json()
+          const data = await submissionsRes.json()
+          const submissionsData = Array.isArray(data) ? data : data.submissions || []
           setSubmissions(submissionsData.slice(0, 10))
         }
       } catch (error) {

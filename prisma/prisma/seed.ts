@@ -1,20 +1,20 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
-// Импорт данных из src/data
-import { vyvozGrunta } from '../src/data/services/vyvoz-grunta'
-import { kirpichnyjBoj } from '../src/data/services/kirpichnyj-boj'
-import { betonnyjBoj } from '../src/data/services/betonnyj-boj'
-import { asfaltnyjBoj } from '../src/data/services/asfaltnyj-boj'
-import { smeshannyeOthody } from '../src/data/services/smeshannye-othody'
-import { razreshitelnayaDokumentaciya } from '../src/data/services/razreshitelnaya-dokumentaciya'
-import { cases } from '../src/data/cases'
-import { clients } from '../src/data/clients'
-import { contacts } from '../src/data/contacts'
-import { whyUs } from '../src/data/whyUs'
-import { steps } from '../src/data/steps'
-import { trustNumbers } from '../src/data/trustNumbers'
-import { blogPosts } from '../src/data/blog'
+// Импорт данных из @/data
+import { vyvozGrunta } from '@/data/services/vyvoz-grunta'
+import { kirpichnyjBoj } from '@/data/services/kirpichnyj-boj'
+import { betonnyjBoj } from '@/data/services/betonnyj-boj'
+import { asfaltnyjBoj } from '@/data/services/asfaltnyj-boj'
+import { smeshannyeOthody } from '@/data/services/smeshannye-othody'
+import { razreshitelnayaDokumentaciya } from '@/data/services/razreshitelnaya-dokumentaciya'
+import { cases } from '@/data/cases'
+import { clients } from '@/data/clients'
+import { contacts } from '@/data/contacts'
+import { whyUs } from '@/data/whyUs'
+import { steps } from '@/data/steps'
+import { trustNumbers } from '@/data/trustNumbers'
+import { blogPosts } from '@/data/blog'
 
 const prisma = new PrismaClient()
 

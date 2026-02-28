@@ -13,6 +13,7 @@ import { FkkoEditor } from "@/components/admin/FkkoEditor"
 
 const tabs = [
   { id: "main", label: "Основное" },
+  { id: "trust", label: "Цифры доверия" },
   { id: "seo", label: "SEO" },
   { id: "pricing", label: "Цены" },
   { id: "faq", label: "FAQ" },
@@ -39,6 +40,7 @@ export function ServiceForm({ initialData, serviceId }: ServiceFormProps) {
     heroImage: initialData?.heroImage || "",
     heroImageAlt: initialData?.heroImageAlt || "",
     badges: initialData?.badges ? JSON.parse(initialData.badges) : [],
+    trustNumbers: initialData?.trustNumbers ? JSON.parse(initialData.trustNumbers) : [],
     order: initialData?.order || 0,
     isActive: initialData?.isActive ?? true,
     seoTitle: initialData?.seoTitle || "",
@@ -88,6 +90,10 @@ export function ServiceForm({ initialData, serviceId }: ServiceFormProps) {
     })) || []
   )
 
+  const [trustNumbers, setTrustNumbers] = useState(
+    initialData?.trustNumbers ? JSON.parse(initialData.trustNumbers) : []
+  )
+
   // Автогенерация slug из title
   useEffect(() => {
     if (!serviceId && formData.title && !formData.slug) {
@@ -111,16 +117,23 @@ export function ServiceForm({ initialData, serviceId }: ServiceFormProps) {
 
       const method = serviceId ? "PUT" : "POST"
 
+      const data = {
+        ...formData,
+        trustNumbers: JSON.stringify(trustNumbers),
+      }
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(data),
       })
 
       if (!response.ok) throw new Error("Ошибка сохранения")
 
-      // Сохраняем связанные данные (pricing, faq, advantages, fkko)
-      // Это упрощённая версия - в полной версии нужно отправлять всё вместе
+      const service = await response.json()
+
+      // Сохраняем связанные данные (pricing, faq, advantages, fkko, trustNumbers)
+      // Для простоты - просто редирект
 
       router.push("/admin/services")
       router.refresh()
@@ -279,6 +292,90 @@ export function ServiceForm({ initialData, serviceId }: ServiceFormProps) {
               </div>
             </div>
           </>
+        )}
+
+        {activeTab === "trust" && (
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Цифры доверия</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Добавьте цифры доверия для отображения в секции Hero (например: "2500 м³/мес вывозим", "15 лет опыта")
+            </p>
+            <div className="space-y-4">
+              {trustNumbers.map((item: any, index: number) => (
+                <div key={index} className="flex gap-3 items-start bg-gray-50 p-4 rounded-lg">
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium text-gray-600">Значение</label>
+                    <input
+                      type="number"
+                      value={item.value}
+                      onChange={(e) => {
+                        const updated = [...trustNumbers]
+                        updated[index] = { ...updated[index], value: parseInt(e.target.value) || 0 }
+                        setTrustNumbers(updated)
+                      }}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium text-gray-600">Суффикс</label>
+                    <input
+                      type="text"
+                      value={item.suffix || ""}
+                      onChange={(e) => {
+                        const updated = [...trustNumbers]
+                        updated[index] = { ...updated[index], suffix: e.target.value }
+                        setTrustNumbers(updated)
+                      }}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500"
+                      placeholder="м³/мес"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium text-gray-600">Подпись</label>
+                    <input
+                      type="text"
+                      value={item.label}
+                      onChange={(e) => {
+                        const updated = [...trustNumbers]
+                        updated[index] = { ...updated[index], label: e.target.value }
+                        setTrustNumbers(updated)
+                      }}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500"
+                      placeholder="Вывозим"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium text-gray-600">Иконка</label>
+                    <input
+                      type="text"
+                      value={item.icon || "truck"}
+                      onChange={(e) => {
+                        const updated = [...trustNumbers]
+                        updated[index] = { ...updated[index], icon: e.target.value }
+                        setTrustNumbers(updated)
+                      }}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500"
+                      placeholder="truck"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setTrustNumbers(trustNumbers.filter((_: any, i: number) => i !== index))}
+                    className="mt-6 text-red-600 hover:text-red-800"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setTrustNumbers([...trustNumbers, { value: 0, suffix: "", label: "", icon: "truck" }])}
+                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-primary-500 hover:text-primary-600 transition-colors"
+              >
+                + Добавить цифру доверия
+              </button>
+            </div>
+          </div>
         )}
 
         {activeTab === "seo" && (

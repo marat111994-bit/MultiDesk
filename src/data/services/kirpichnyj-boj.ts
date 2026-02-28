@@ -9,9 +9,14 @@ export const kirpichnyjBoj: Service = {
     "Вывоз и утилизация кирпичного боя всех типов: строительный кирпичный бой от сноса зданий, огнеупорный промышленный кирпич от демонтажа печей и футеровки. Собственный автопарк контейнеров и самосвалов. Лицензия на обращение с отходами IV–V классов опасности. Дробление кирпича на месте с последующей переработкой.",
   shortDescription:
     "Вывоз кирпичного боя от сноса зданий и демонтажа печей. Дробление, переработка. ФККО 81220101205.",
-  heroImage: "/images/services/kirpichnyj-boj/hero.svg",
+  heroImage: "/uploads/general/1772286578964-gemini-generated-image-wlhu7cwlhu7cwlhu.webp",
   heroImageAlt: "Вывоз кирпичного боя со строительной площадки",
-  badges: ["Лицензия IV–V класс", "от 450 ₽/м³", "Дробление на месте"],
+  topBadge: "Собственный автопарк • 120+ единиц",
+  badges: [
+    { value: "Лицензия IV–V класс", label: "Разрешение", icon: "shield-check" },
+    { value: "от 450 ₽/м³", label: "Цена", icon: "dollar-sign" },
+    { value: "Дробление на месте", label: "Услуга", icon: "hammer" },
+  ],
   seo: {
     title: "Вывоз и утилизация кирпичного боя в Москве — цены, ФККО | DanMax",
     description:
@@ -134,7 +139,12 @@ export const kirpichnyjBoj: Service = {
         "Вывоз кирпича от сноса стен и зданий. Дробление, переработка. ФККО 81220101205.",
       heroImage: "/images/services/kirpichnyj-boj/stroitelnyj.svg",
       heroImageAlt: "Вывоз строительного кирпичного боя",
-      badges: ["ФККО 81220101205", "от 450 ₽/м³", "Переработка 95%"],
+      topBadge: "Собственный автопарк • 120+ единиц",
+      badges: [
+        { value: "ФККО 81220101205", label: "Код отхода", icon: "file-text" },
+        { value: "от 450 ₽/м³", label: "Цена", icon: "dollar-sign" },
+        { value: "Переработка 95%", label: "Экология", icon: "recycle" },
+      ],
       seo: {
         title:
           "Вывоз строительного кирпичного боя в Москве | ФККО 81220101205",
@@ -251,7 +261,12 @@ export const kirpichnyjBoj: Service = {
         "Вывоз огнеупорного кирпича от демонтажа печей. ФККО 91218101215. Лицензия III класс.",
       heroImage: "/images/services/kirpichnyj-boj/ogneupornyj.svg",
       heroImageAlt: "Вывоз огнеупорного промышленного кирпича",
-      badges: ["ФККО 91218101215", "от 650 ₽/м³", "Лицензия III класс"],
+      topBadge: "Собственный автопарк • 120+ единиц",
+      badges: [
+        { value: "ФККО 91218101215", label: "Код отхода", icon: "file-text" },
+        { value: "от 650 ₽/м³", label: "Цена", icon: "dollar-sign" },
+        { value: "Лицензия III класс", label: "Разрешение", icon: "shield-check" },
+      ],
       seo: {
         title:
           "Вывоз огнеупорного кирпича в Москве | ФККО 91218101215",

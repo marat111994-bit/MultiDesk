@@ -11,7 +11,12 @@ export const smeshannyeOthody: Service = {
     "Вывоз смешанных строительных отходов. Сортировка. ФККО 81200000000. От 550 ₽/м³.",
   heroImage: "/images/services/smeshannye-othody/hero.svg",
   heroImageAlt: "Вывоз смешанных строительных отходов",
-  badges: ["ФККО 81200000000", "от 550 ₽/м³", "Сортировка"],
+  topBadge: "Собственный автопарк • 120+ единиц",
+  badges: [
+    { value: "ФККО 81200000000", label: "Код отхода", icon: "file-text" },
+    { value: "от 550 ₽/м³", label: "Цена", icon: "dollar-sign" },
+    { value: "Сортировка", label: "Переработка", icon: "recycle" },
+  ],
   seo: {
     title: "Вывоз смешанных строительных отходов в Москве — цены, ФККО | DanMax",
     description:

@@ -1,9 +1,0 @@
-export { contacts } from "./contacts";
-export { navigation } from "./navigation";
-export { vyvozGrunta } from "./services";
-export { trustNumbers } from "./trustNumbers";
-export { steps } from "./steps";
-export { whyUs } from "./whyUs";
-export { cases } from "./cases";
-export { clients } from "./clients";
-export { blogPosts } from "./blog";

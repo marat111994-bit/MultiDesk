@@ -14,7 +14,7 @@ import {
 } from "@/components/sections";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { getServices, getCases, getClients, getTrustNumbers, getSteps, getHomeAdvantages, getPromo } from "@/lib/data";
+import { getServices, getCases, getClients, getTrustNumbers, getSteps, getHomeAdvantages, getPromo, getHomePageSettings } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "DanMax — Вывоз и утилизация строительных отходов в Москве",
@@ -55,7 +55,7 @@ const organizationJsonLd = {
 };
 
 export default async function HomePage() {
-  const [services, cases, clients, trustNumbers, steps, advantages, promo] = await Promise.all([
+  const [services, cases, clients, trustNumbers, steps, advantages, promo, homeSettings] = await Promise.all([
     getServices(),
     getCases(),
     getClients(),
@@ -63,6 +63,7 @@ export default async function HomePage() {
     getSteps(),
     getHomeAdvantages(),
     getPromo(),
+    getHomePageSettings(),
   ])
 
   const mainServices = services.slice(0, 6)
@@ -91,11 +92,11 @@ export default async function HomePage() {
       {/* Hero Section */}
       <HeroSection
         variant="service"
-        title="Вывоз и утилизация строительных отходов в Москве"
-        subtitle="Грунт, бетон, кирпич, асфальт — вывозим и утилизируем с полным пакетом документов. Собственный автопарк, все лицензии."
-        image="/images/placeholder-hero.svg"
-        imageAlt="Вывоз строительных отходов DanMax"
-        badges={["Лицензия 1–5 класс", "от 350 ₽/м³", "120+ единиц техники", "Работа 24/7"]}
+        title={homeSettings.heroTitle}
+        subtitle={homeSettings.heroSubtitle}
+        image={homeSettings.heroImage}
+        imageAlt={homeSettings.heroImageAlt}
+        badges={homeSettings.heroBadges.map((value: string) => ({ value, label: '', icon: 'shield-check' }))}
         ctaPrimary={{ text: "Рассчитать стоимость" }}
         ctaSecondary={{ text: "Наши услуги", href: "/uslugi/" }}
         ctaTertiary={{ text: "Смотреть цены", href: "#pricing" }}
@@ -153,8 +154,8 @@ export default async function HomePage() {
       <WhyUs
         title="Почему выбирают DanMax"
         advantages={advantages}
-        image="/images/placeholder.svg"
-        imageAlt="Команда DanMax"
+        image={homeSettings.whyUsImage}
+        imageAlt={homeSettings.whyUsImageAlt}
       />
 
       {/* How We Work */}

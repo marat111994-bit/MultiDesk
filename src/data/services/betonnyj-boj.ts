@@ -11,7 +11,12 @@ export const betonnyjBoj: Service = {
     "Вывоз бетонного боя, ЖБИ, шпал. Алмазная резка. ФККО 82220101215. Лицензия.",
   heroImage: "/images/services/betonnyj-boj/hero.svg",
   heroImageAlt: "Вывоз бетонного боя со строительной площадки",
-  badges: ["Лицензия IV–V класс", "от 500 ₽/м³", "Алмазная резка"],
+  topBadge: "Собственный автопарк • 120+ единиц",
+  badges: [
+    { value: "Лицензия IV–V класс", label: "Разрешение", icon: "shield-check" },
+    { value: "от 500 ₽/м³", label: "Цена", icon: "dollar-sign" },
+    { value: "Алмазная резка", label: "Услуга", icon: "scissors" },
+  ],
   seo: {
     title: "Вывоз и утилизация бетонного боя в Москве — цены, ФККО | DanMax",
     description:
@@ -140,7 +145,12 @@ export const betonnyjBoj: Service = {
         "Вывоз бетона и ЖБИ от сноза. Алмазная резка. ФККО 82220101215.",
       heroImage: "/images/services/betonnyj-boj/lom-betona.svg",
       heroImageAlt: "Вывоз лома бетона и ЖБИ",
-      badges: ["ФККО 82220101215", "от 500 ₽/м³", "Алмазная резка"],
+      topBadge: "Собственный автопарк • 120+ единиц",
+      badges: [
+        { value: "ФККО 82220101215", label: "Код отхода", icon: "file-text" },
+        { value: "от 500 ₽/м³", label: "Цена", icon: "dollar-sign" },
+        { value: "Алмазная резка", label: "Услуга", icon: "scissors" },
+      ],
       seo: {
         title: "Вывоз лома бетона и ЖБИ в Москве | ФККО 82220101215",
         description:
@@ -257,7 +267,12 @@ export const betonnyjBoj: Service = {
         "Вывоз смешанных отходов сноса. ФККО 82410000000. Контейнеры 27 м³.",
       heroImage: "/images/services/betonnyj-boj/othody-snosa.svg",
       heroImageAlt: "Вывоз отходов сноса и демонтажа",
-      badges: ["ФККО 82410000000", "от 550 ₽/м³", "Контейнеры 27 м³"],
+      topBadge: "Собственный автопарк • 120+ единиц",
+      badges: [
+        { value: "ФККО 82410000000", label: "Код отхода", icon: "file-text" },
+        { value: "от 550 ₽/м³", label: "Цена", icon: "dollar-sign" },
+        { value: "Контейнеры 27 м³", label: "Транспорт", icon: "truck" },
+      ],
       seo: {
         title: "Вывоз отходов сноса и демонтажа в Москве | ФККО 82410000000",
         description:
@@ -367,7 +382,12 @@ export const betonnyjBoj: Service = {
         "Вывоз ж/б и деревянных шпал. ФККО 84220101493. Контейнеры.",
       heroImage: "/images/services/betonnyj-boj/shpaly.svg",
       heroImageAlt: "Вывоз железнодорожных шпал",
-      badges: ["ФККО 84220101493", "от 350 ₽/шт", "РЖД"],
+      topBadge: "Собственный автопарк • 120+ единиц",
+      badges: [
+        { value: "ФККО 84220101493", label: "Код отхода", icon: "file-text" },
+        { value: "от 350 ₽/шт", label: "Цена", icon: "dollar-sign" },
+        { value: "РЖД", label: "Отрасль", icon: "train" },
+      ],
       seo: {
         title: "Вывоз ж/б шпал и отходов пути в Москве | ФККО 84220101493",
         description:
@@ -478,7 +498,12 @@ export const betonnyjBoj: Service = {
         "Вывоз строительных смесей, растворов. ФККО 82290101524.",
       heroImage: "/images/services/betonnyj-boj/smesi.svg",
       heroImageAlt: "Вывоз строительных смесей",
-      badges: ["ФККО 82290101524", "от 600 ₽/м³", "Контейнеры"],
+      topBadge: "Собственный автопарк • 120+ единиц",
+      badges: [
+        { value: "ФККО 82290101524", label: "Код отхода", icon: "file-text" },
+        { value: "от 600 ₽/м³", label: "Цена", icon: "dollar-sign" },
+        { value: "Контейнеры", label: "Транспорт", icon: "truck" },
+      ],
       seo: {
         title: "Вывоз строительных смесей и загрязнённого бетона | ФККО 82290101524",
         description:

@@ -33,24 +33,26 @@ model Service {
   shortDescription String
   heroImage        String?
   heroImageAlt     String?
+  topBadge         String?       // Верхний бейдж: "Собственный автопарк • 120+ единиц"
   badges           String        // JSON array: ["Лицензия", "от 350₽"]
+  trustNumbers     String?       // JSON array: [{ value: 2500, suffix: "м³/мес", label: "Вывозим", icon: "truck" }]
   order            Int           @default(0) // Порядок сортировки
   isActive         Boolean       @default(true)
-  
+
   // SEO
   seoTitle         String?
   seoDescription   String?
   seoH1            String?
   seoKeywords      String?       // JSON array
   ogImage          String?
-  
+
   // Связи
   subcategories    Subcategory[]
   pricing          PriceRow[]
   faqItems         FaqItem[]
   advantages       Advantage[]
   cases            Case[]
-  
+
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 }
@@ -64,27 +66,29 @@ model Subcategory {
   shortDescription String
   heroImage        String?
   heroImageAlt     String?
+  topBadge         String?    // Верхний бейдж
   badges           String     // JSON array
+  trustNumbers     String?    // JSON array: [{ value: 2500, suffix: "м³/мес", label: "Вывозим", icon: "truck" }]
   order            Int        @default(0)
   isActive         Boolean    @default(true)
-  
+
   // SEO
   seoTitle         String?
   seoDescription   String?
   seoH1            String?
   seoKeywords      String?
   ogImage          String?
-  
+
   // Родительская услуга
   serviceId        String
   service          Service    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  
+
   // ФККО
   fkkoItems        FkkoRow[]
   pricing          PriceRow[]
   faqItems         FaqItem[]
   advantages       Advantage[]
-  
+
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 }
@@ -213,6 +217,21 @@ model SiteSetting {
   label          String       // Человекочитаемое название для админки
   group          String       // "contacts", "social", "company", "promo"
   order          Int          @default(0)
+}
+
+// ==================== ГЛАВНАЯ СТРАНИЦА ====================
+
+model HomePage {
+  id               String     @id @default(cuid())
+  heroTitle        String     // Заголовок Hero секции
+  heroSubtitle     String     // Подзаголовок Hero секции
+  heroImage        String?    // Изображение Hero
+  heroImageAlt     String?
+  heroBadges       String     // JSON array: ["Лицензия 1–5 класс", "от 350 ₽/м³"]
+  whyUsImage       String?    // Изображение для "Почему выбирают нас"
+  whyUsImageAlt    String?
+  isActive         Boolean    @default(true)
+  updatedAt        DateTime   @updatedAt
 }
 
 // ==================== ЗАЯВКИ С САЙТА ====================

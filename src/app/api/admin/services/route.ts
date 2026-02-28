@@ -54,6 +54,7 @@ export async function POST(request: Request) {
         heroImage: body.heroImage,
         heroImageAlt: body.heroImageAlt,
         badges: JSON.stringify(body.badges || []),
+        trustNumbers: JSON.stringify(body.trustNumbers || []),
         order: body.order || 0,
         isActive: body.isActive ?? true,
         seoTitle: body.seoTitle,

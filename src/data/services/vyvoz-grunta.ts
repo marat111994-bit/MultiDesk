@@ -15,7 +15,12 @@ export const vyvozGrunta: Service = {
     "Вывоз грунта в Москве и МО: чистый, строительный, загрязнённый грунт, буровой шлам ГНБ. Собственный автопарк, лицензии 1–5 класс.",
   heroImage: "/images/services/vyvoz-grunta/hero.svg",
   heroImageAlt: "Самосвал вывозит грунт со строительной площадки в Москве",
-  badges: ["Лицензия 1–5 класс", "от 350 ₽/м³", "Вывоз за 24 часа"],
+  topBadge: "Собственный автопарк • 120+ единиц",
+  badges: [
+    { value: "Лицензия 1–5 класс", label: "Разрешение", icon: "shield-check" },
+    { value: "от 350 ₽/м³", label: "Цена", icon: "dollar-sign" },
+    { value: "24 часа", label: "Вывоз", icon: "clock" },
+  ],
   seo: {
     title: "Вывоз и утилизация грунта в Москве — цены, ФККО | DanMax",
     description:
@@ -146,7 +151,12 @@ export const vyvozGrunta: Service = {
         "Вывоз чистого грунта (чернозём, глина, песок) для повторного использования.",
       heroImage: "/images/services/vyvoz-grunta/chistyj-grunt.svg",
       heroImageAlt: "Вывоз чистого чернозёма со строительной площадки",
-      badges: ["ФККО 81110000000", "от 350 ₽/м³", "Повторное использование"],
+      topBadge: "Собственный автопарк • 120+ единиц",
+      badges: [
+        { value: "ФККО 81110000000", label: "Код отхода", icon: "file-text" },
+        { value: "от 350 ₽/м³", label: "Цена", icon: "dollar-sign" },
+        { value: "Повторное использование", label: "Экология", icon: "recycle" },
+      ],
       seo: {
         title: "Вывоз чистого грунта в Москве — чернозём, глина, песок | DanMax",
         description:
@@ -274,7 +284,12 @@ export const vyvozGrunta: Service = {
         "Вывоз грунта с примесями кирпича, бетона, асфальта. ФККО 81111531404.",
       heroImage: "/images/services/vyvoz-grunta/tekhnogennyj-grunt.svg",
       heroImageAlt: "Вывоз строительного грунта с примесями",
-      badges: ["ФККО 81111531404", "от 450 ₽/м³", "Лицензия IV класс"],
+      topBadge: "Собственный автопарк • 120+ единиц",
+      badges: [
+        { value: "ФККО 81111531404", label: "Код отхода", icon: "file-text" },
+        { value: "от 450 ₽/м³", label: "Цена", icon: "dollar-sign" },
+        { value: "Лицензия IV класс", label: "Разрешение", icon: "shield-check" },
+      ],
       seo: {
         title: "Вывоз строительного грунта с примесями в Москве | ФККО 81111531404",
         description:
@@ -399,7 +414,12 @@ export const vyvozGrunta: Service = {
         "Утилизация бурового шлама ГНБ, бентонитового раствора. ФККО 81112311394.",
       heroImage: "/images/services/vyvoz-grunta/burovoj-shlam-gnb.svg",
       heroImageAlt: "Утилизация бурового шлама после ГНБ-работ",
-      badges: ["ФККО 81112311394", "от 650 ₽/м³", "Лицензия III класс"],
+      topBadge: "Собственный автопарк • 120+ единиц",
+      badges: [
+        { value: "ФККО 81112311394", label: "Код отхода", icon: "file-text" },
+        { value: "от 650 ₽/м³", label: "Цена", icon: "dollar-sign" },
+        { value: "Лицензия III класс", label: "Разрешение", icon: "shield-check" },
+      ],
       seo: {
         title: "Утилизация бурового шлама ГНБ в Москве — бентонитовый раствор | DanMax",
         description:
@@ -523,7 +543,12 @@ export const vyvozGrunta: Service = {
         "Вывоз грунта с нефтепродуктами. ФККО 93110001393. Лицензия III класс.",
       heroImage: "/images/services/vyvoz-grunta/zagryaznennyj-grunt.svg",
       heroImageAlt: "Вывоз грунта загрязнённого нефтепродуктами",
-      badges: ["ФККО 93110001393", "от 850 ₽/м³", "Лицензия III класс"],
+      topBadge: "Собственный автопарк • 120+ единиц",
+      badges: [
+        { value: "ФККО 93110001393", label: "Код отхода", icon: "file-text" },
+        { value: "от 850 ₽/м³", label: "Цена", icon: "dollar-sign" },
+        { value: "Лицензия III класс", label: "Разрешение", icon: "shield-check" },
+      ],
       seo: {
         title: "Вывоз грунта загрязнённого нефтепродуктами в Москве | ФККО 93110001393",
         description:
@@ -649,7 +674,12 @@ export const vyvozGrunta: Service = {
         "Вывоз дорожного грунта, асфальтовой крошки, ж/д балласта. ФККО 84200000000.",
       heroImage: "/images/services/vyvoz-grunta/dorozhnyj-grunt.svg",
       heroImageAlt: "Вывоз дорожного грунта и щебня",
-      badges: ["ФККО 84200000000", "от 500 ₽/м³", "Самосвалы 30 м³"],
+      topBadge: "Собственный автопарк • 120+ единиц",
+      badges: [
+        { value: "ФККО 84200000000", label: "Код отхода", icon: "file-text" },
+        { value: "от 500 ₽/м³", label: "Цена", icon: "dollar-sign" },
+        { value: "Самосвалы 30 м³", label: "Транспорт", icon: "truck" },
+      ],
       seo: {
         title: "Вывоз дорожного грунта и ж/д балласта в Москве | ФККО 84200000000",
         description:
