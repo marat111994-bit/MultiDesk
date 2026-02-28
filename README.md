@@ -96,31 +96,56 @@ npm run import:calculator ./data
 
 ## Deploy
 
-### Railway
+### Локальное развёртывание
 
-Проект развёртывается на [Railway](https://railway.app/).
-
-**Требования:**
-- Chromium для генерации PDF (установлен через nixpacks)
-- PostgreSQL база данных (add PostgreSQL в Railway проекте)
-
-**Переменные окружения в Railway:**
+**1. Установка зависимостей:**
 ```bash
-DATABASE_URL=postgresql://...
-OPENROUTE_API_KEY=...
-YANDEX_API_KEY=...
-DADATA_API_KEY=...
-COMPANY_NAME="ДанМакс"
-COMPANY_PHONE="+7 (495) XXX-XX-XX"
-COMPANY_EMAIL="info@danmax.ru"
-COMPANY_INN="XXXXXXXXXX"
+npm install
 ```
 
-**Миграции:**
+**2. Настройка переменных окружения:**
 ```bash
+# Скопируйте .env.example в .env
+copy .env.example .env
+
+# Отредактируйте .env и укажите ваши API ключи
+```
+
+**3. Инициализация базы данных:**
+```bash
+# Генерация Prisma клиента
 npx prisma generate
+
+# Применение миграций (SQLite создаётся автоматически)
 npx prisma migrate deploy
 ```
+
+**4. Импорт данных калькулятора (опционально):**
+```bash
+npm run import:calculator ./data
+```
+
+**5. Запуск сервера:**
+```bash
+# Режим разработки
+npm run dev
+
+# Продакшен режим
+npm run build
+npm run start
+```
+
+Откройте [http://localhost:3000](http://localhost:3000) в браузере.
+
+### Админ-панель
+
+Доступна по адресу [/admin](http://localhost:3000/admin)
+
+**Учётные данные по умолчанию:**
+- Email: `admin@danmax.ru`
+- Пароль: `admin123`
+
+> ⚠️ **Важно:** После первого входа смените пароль!
 
 ## Learn More
 
