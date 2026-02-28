@@ -10,6 +10,15 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    // Начало и конец текущего месяца
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+
     // Получаем всю статистику параллельно
     const [
       servicesCount,
@@ -26,6 +35,14 @@ export async function GET() {
       submissionsCount,
       submissionsNewCount,
       mediaCount,
+      // Статистика калькулятора
+      totalCalculations,
+      todayCalculations,
+      totalRevenueResult,
+      // Заявки сегодня (объединённые)
+      todaySubmissionsCount,
+      // Сумма расчётов за месяц (completed)
+      monthlyRevenueResult,
     ] = await Promise.all([
       prisma.service.count(),
       prisma.service.count({ where: { isActive: true } }),
@@ -41,6 +58,46 @@ export async function GET() {
       prisma.formSubmission.count(),
       prisma.formSubmission.count({ where: { isRead: false } }),
       prisma.mediaFile.count(),
+      // Калькулятор
+      prisma.calculation.count(),
+      prisma.calculation.count({
+        where: {
+          createdAt: {
+            gte: today,
+            lt: tomorrow,
+          },
+        },
+      }),
+      prisma.calculation.aggregate({
+        _sum: {
+          totalPrice: true,
+        },
+        where: {
+          status: 'completed',
+        },
+      }),
+      // Заявки с сайта сегодня
+      prisma.formSubmission.count({
+        where: {
+          createdAt: {
+            gte: today,
+            lt: tomorrow,
+          },
+        },
+      }),
+      // Сумма completed расчётов за текущий месяц
+      prisma.calculation.aggregate({
+        _sum: {
+          totalPrice: true,
+        },
+        where: {
+          status: 'completed',
+          createdAt: {
+            gte: monthStart,
+            lte: monthEnd,
+          },
+        },
+      }),
     ])
 
     return NextResponse.json({
@@ -71,6 +128,15 @@ export async function GET() {
       },
       media: {
         total: mediaCount,
+      },
+      calculator: {
+        totalCalculations,
+        todayCalculations,
+        totalRevenue: totalRevenueResult._sum.totalPrice || 0,
+      },
+      orders: {
+        today: (todaySubmissionsCount || 0) + (todayCalculations || 0),
+        monthlyRevenue: monthlyRevenueResult._sum.totalPrice || 0,
       },
     })
   } catch (error) {

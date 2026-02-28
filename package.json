@@ -11,8 +11,10 @@
     "prisma:seed": "npx tsx prisma/seed.ts",
     "db:push": "npx prisma db push",
     "db:seed": "npx prisma db seed",
-    "images:placeholders": "npx tsx scripts/create-placeholder-images.ts"
+    "images:placeholders": "npx tsx scripts/create-placeholder-images.ts",
+    "import:calculator": "npx tsx scripts/import-calculator-data.ts ./data"
   },
+  "_note": "Для генерации PDF коммерческих предложений установите: npm install puppeteer-core",
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
   },
@@ -52,6 +54,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "csv-parse": "^6.1.0",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
     "prisma": "^5.22.0",

@@ -47,4 +47,13 @@ server.log
 # Sitemap (generated)
 public/sitemap.xml
 
+# Prisma (SQLite dev DB - exclude from git)
+prisma/dev.db
+prisma/dev.db-journal
+prisma/prisma/dev.db
+prisma/prisma/dev.db-journal
+prisma/migrations/
+prisma/prisma/migrations/
+
+# Generated Prisma
 /src/generated/prisma
