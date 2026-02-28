@@ -40,7 +40,6 @@ export function ServiceForm({ initialData, serviceId }: ServiceFormProps) {
     heroImage: initialData?.heroImage || "",
     heroImageAlt: initialData?.heroImageAlt || "",
     badges: initialData?.badges ? JSON.parse(initialData.badges) : [],
-    trustNumbers: initialData?.trustNumbers ? JSON.parse(initialData.trustNumbers) : [],
     order: initialData?.order || 0,
     isActive: initialData?.isActive ?? true,
     seoTitle: initialData?.seoTitle || "",
@@ -49,6 +48,10 @@ export function ServiceForm({ initialData, serviceId }: ServiceFormProps) {
     seoKeywords: initialData?.seoKeywords ? JSON.parse(initialData.seoKeywords) : [],
     ogImage: initialData?.ogImage || "",
   })
+
+  const [trustNumbers, setTrustNumbers] = useState<any[]>(
+    initialData?.trustNumbers ? JSON.parse(initialData.trustNumbers) : []
+  )
 
   const [pricing, setPricing] = useState(
     initialData?.pricing?.map((p: any) => ({
@@ -88,10 +91,6 @@ export function ServiceForm({ initialData, serviceId }: ServiceFormProps) {
       description: f.description,
       order: f.order,
     })) || []
-  )
-
-  const [trustNumbers, setTrustNumbers] = useState(
-    initialData?.trustNumbers ? JSON.parse(initialData.trustNumbers) : []
   )
 
   // Автогенерация slug из title
