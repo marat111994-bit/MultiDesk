@@ -12,6 +12,7 @@ interface Stats {
   blog: { total: number; published: number; drafts: number }
   cases: { total: number; active: number }
   submissions: { total: number; new: number }
+  orders: { today: number; monthlyRevenue: number }
 }
 
 interface Submission {
@@ -75,7 +76,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Верхний ряд — статистика */}
-      <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
         {/* Услуги */}
         <div className="rounded-lg bg-white p-6 shadow">
           <dt className="truncate text-sm font-medium text-gray-500">Услуги</dt>
@@ -109,17 +110,31 @@ export default function AdminDashboardPage() {
           </p>
         </div>
 
-        {/* Заявки */}
+        {/* Заявки сегодня */}
         <div className="rounded-lg bg-white p-6 shadow">
-          <dt className="truncate text-sm font-medium text-gray-500">Заявки</dt>
+          <dt className="truncate text-sm font-medium text-gray-500">Заявки сегодня</dt>
           <dd className="mt-2 text-3xl font-semibold text-gray-900">
-            {stats?.submissions.total || 0}
+            {stats?.orders.today || 0}
           </dd>
           <p className="mt-1 text-sm text-gray-600">
-            {stats?.submissions.new || 0} новых
-            {stats && stats.submissions.new > 0 && (
-              <span className="ml-2 inline-flex h-2 w-2 rounded-full bg-primary-500"></span>
-            )}
+            Суммарно из всех источников
+          </p>
+        </div>
+
+        {/* Сумма расчётов */}
+        <div className="rounded-lg bg-white p-6 shadow">
+          <dt className="truncate text-sm font-medium text-gray-500">Сумма расчётов</dt>
+          <dd className="mt-2 text-2xl font-semibold text-gray-900">
+            {new Intl.NumberFormat('ru-RU', {
+              style: 'currency',
+              currency: 'RUB',
+              maximumFractionDigits: 0,
+              notation: 'compact',
+              compactDisplay: 'short',
+            }).format(stats?.orders.monthlyRevenue || 0)}
+          </dd>
+          <p className="mt-1 text-sm text-gray-600">
+            За текущий месяц (завершено)
           </p>
         </div>
       </div>

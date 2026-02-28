@@ -16,6 +16,7 @@ import {
   LogOut,
   ExternalLink,
   X,
+  Calculator,
 } from "lucide-react"
 import { signOut } from "next-auth/react"
 import { useState, useEffect } from "react"
@@ -29,8 +30,14 @@ const navigation = [
   { name: "Клиенты", href: "/admin/clients", icon: Users },
   { name: "FAQ", href: "/admin/faq", icon: MessageSquare },
   { name: "Медиа", href: "/admin/media", icon: Image },
-  { name: "Заявки", href: "/admin/submissions", icon: Inbox, badge: true },
+  { name: "Все заявки", href: "/admin/orders", icon: Inbox, badge: true },
+  { name: "Заявки с сайта", href: "/admin/submissions", icon: FileText },
   { name: "Настройки", href: "/admin/settings", icon: Settings },
+]
+
+const calculatorNavigation = [
+  { name: "Полигоны", href: "/admin/calculator/polygons", icon: FolderOpen },
+  { name: "Тарифы", href: "/admin/calculator/tariffs", icon: Calculator },
 ]
 
 interface SidebarProps {
@@ -114,6 +121,40 @@ export function Sidebar({ unreadCount = 0, onToggle, isOpen = true }: SidebarPro
               </Link>
             )
           })}
+
+          {/* Группа "Калькулятор" */}
+          <div className="mt-6">
+            <h3 className="px-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Калькулятор
+            </h3>
+            <div className="mt-2 space-y-1">
+              {calculatorNavigation.map((item) => {
+                const isActive = pathname.startsWith(item.href)
+
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={clsx(
+                      "group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-gray-800 text-white border-l-3 border-primary-500"
+                        : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                    )}
+                  >
+                    <item.icon
+                      className={clsx(
+                        "mr-3 h-5 w-5 shrink-0",
+                        isActive ? "text-white" : "text-gray-400 group-hover:text-white"
+                      )}
+                      aria-hidden="true"
+                    />
+                    <span className="flex-1">{item.name}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
         </nav>
 
         {/* Разделитель и ссылка на сайт */}
