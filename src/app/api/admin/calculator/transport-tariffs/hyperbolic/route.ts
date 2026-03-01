@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 const hyperbolicSchema = z.object({
   point1Km: z.number().positive(),
@@ -12,7 +13,6 @@ const hyperbolicSchema = z.object({
   point3Tariff: z.number().positive(),
   hyperMinKm: z.number().positive().int(),
   hyperMaxKm: z.number().positive().int(),
-  volumeCoeff: z.number().positive(),
   marginPercent: z.number().min(0).max(100),
   maxDistanceKm: z.number().positive(),
 });
@@ -152,7 +152,7 @@ function solveHyperbola(
 /**
  * POST /api/admin/calculator/transport-tariffs/hyperbolic
  * Генерирует гиперболическую матрицу тарифов
- * Body: { point1Km, point1Tariff, point2Km, point2Tariff, point3Km, point3Tariff, hyperMinKm, hyperMaxKm, volumeCoeff, marginPercent, maxDistanceKm }
+ * Body: { point1Km, point1Tariff, point2Km, point2Tariff, point3Km, point3Tariff, hyperMinKm, hyperMaxKm, marginPercent, maxDistanceKm }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -176,16 +176,15 @@ export async function POST(request: NextRequest) {
       point3Tariff,
       hyperMinKm,
       hyperMaxKm,
-      volumeCoeff,
       marginPercent,
       maxDistanceKm,
     } = validatedData;
 
     // Решаем систему уравнений для нахождения параметров гиперболы
     const hyperbolaParams = solveHyperbola(
-      point1Km, point1Tariff,
-      point2Km, point2Tariff,
-      point3Km, point3Tariff
+      Number(point1Km), Number(point1Tariff),
+      Number(point2Km), Number(point2Tariff),
+      Number(point3Km), Number(point3Tariff)
     );
 
     if (!hyperbolaParams) {
@@ -196,61 +195,68 @@ export async function POST(request: NextRequest) {
     }
 
     const { a, b, c } = hyperbolaParams;
-    const marginMultiplier = 1 - marginPercent / 100;
+    
+    // Преобразуем в числа (защита от NaN)
+    const aNum = Number(a);
+    const bNum = Number(b);
+    const cNum = Number(c);
+    const marginPercentNum = Number(marginPercent);
+    const maxDistanceKmNum = Number(maxDistanceKm);
+    const hyperMinKmNum = Number(hyperMinKm);
+    const hyperMaxKmNum = Number(hyperMaxKm);
+
+    // Формула гиперболы: tariff(km) = a + b / (km + c)
+    // marginMultiplier для клиентских тарифов: (1 - marginPercent/100)
+    const marginMultiplier = 1 - (marginPercentNum / 100);
     const recordsToCreate = [];
 
     // Генерируем тарифы для каждого км от 1 до maxDistanceKm
-    for (let km = 1; km <= maxDistanceKm; km++) {
-      // Тариф по гиперболе: tariff(km) = a + b / (km + c)
-      let baseTariffTkm = a + b / (km + c);
-      
+    for (let km = 1; km <= maxDistanceKmNum; km++) {
+      // Формула гиперболы: tariff(km) = a + b / (km + c)
+      // baseTariffTkm = тариф за т·км = результат гиперболы
+      let baseTariffTkm = aNum + bNum / (km + cNum);
+
       // Ограничиваем диапазон применения гиперболы
-      if (km < hyperMinKm) {
+      if (km < hyperMinKmNum) {
         // Для км меньше минимума используем тариф на hyperMinKm
-        baseTariffTkm = a + b / (hyperMinKm + c);
-      } else if (km > hyperMaxKm) {
+        baseTariffTkm = aNum + bNum / (hyperMinKmNum + cNum);
+      } else if (km > hyperMaxKmNum) {
         // Для км больше максимума используем тариф на hyperMaxKm
-        baseTariffTkm = a + b / (hyperMaxKm + c);
+        baseTariffTkm = aNum + bNum / (hyperMaxKmNum + cNum);
       }
 
       // Не допускаем отрицательных тарифов
       if (baseTariffTkm < 0) {
-        baseTariffTkm = a + b / (hyperMaxKm + c);
+        baseTariffTkm = aNum + bNum / (hyperMaxKmNum + cNum);
       }
 
-      // Базовые тарифы
+      // Базовые тарифы (наша себестоимость)
+      // baseTariffT = baseTariffTkm × km (₽ за тонну на всё плечо)
       const baseTariffT = baseTariffTkm * km;
-      const baseTariffM3 = baseTariffT * volumeCoeff;
-      const baseTariffM3km = baseTariffTkm * volumeCoeff;
 
-      // Исходящие тарифы (с учётом маржи)
-      const outgoingTariffT = baseTariffT * marginMultiplier;
-      const outgoingTariffTkm = baseTariffTkm * marginMultiplier;
-      const outgoingTariffM3 = baseTariffM3 * marginMultiplier;
-      const outgoingTariffM3km = baseTariffM3km * marginMultiplier;
+      // Исходящие тарифы (с учётом маржи — это то что мы выставляем клиенту)
+      const outgoingTariffTkm = baseTariffTkm * marginMultiplier;  // ₽/т·км клиентский
+      const outgoingTariffT   = baseTariffT   * marginMultiplier;  // ₽/тонну клиентский
 
       // Маржа
       const marginT = baseTariffT - outgoingTariffT;
-      const marginTkm = baseTariffTkm - outgoingTariffTkm;
-      const marginM3 = baseTariffM3 - outgoingTariffM3;
-      const marginM3km = baseTariffM3km - outgoingTariffM3km;
 
       recordsToCreate.push({
         distanceKm: km,
         baseTariffT,
         baseTariffTkm,
-        baseTariffM3,
-        baseTariffM3km,
+        baseTariffM3: baseTariffT,       // volumeCoeff = 1, поэтому M3 = T
+        baseTariffM3km: baseTariffTkm,   // volumeCoeff = 1, поэтому M3km = Tkm
         outgoingTariffT,
         outgoingTariffTkm,
-        outgoingTariffM3,
-        outgoingTariffM3km,
+        outgoingTariffM3: outgoingTariffT,
+        outgoingTariffM3km: outgoingTariffTkm,
         marginT,
-        marginTkm,
-        marginM3,
-        marginM3km,
-        volumeCoeff,
-        marginPercent,
+        marginTkm: baseTariffTkm - outgoingTariffTkm,
+        marginM3: marginT,
+        marginM3km: baseTariffTkm - outgoingTariffTkm,
+        volumeCoeff: 1,                  // нейтральное значение
+        marginPercent: marginPercentNum, // сохраняем для справки
       });
     }
 
@@ -278,41 +284,41 @@ export async function POST(request: NextRequest) {
     await prisma.transportTariffConfig.upsert({
       where: { id: 1 },
       update: {
-        point1Km,
-        point1Tariff,
-        point2Km,
-        point2Tariff,
-        point3Km,
-        point3Tariff,
+        point1Km: Number(point1Km),
+        point1Tariff: Number(point1Tariff),
+        point2Km: Number(point2Km),
+        point2Tariff: Number(point2Tariff),
+        point3Km: Number(point3Km),
+        point3Tariff: Number(point3Tariff),
         paramA: a,
         paramB: b,
         paramC: c,
-        hyperMinKm,
-        hyperMaxKm,
-        volumeCoeff,
-        marginPercent,
-        maxDistanceKm,
+        hyperMinKm: hyperMinKmNum,
+        hyperMaxKm: hyperMaxKmNum,
+        volumeCoeff: 1,                  // нейтральное значение
+        marginPercent: marginPercentNum,
+        maxDistanceKm: maxDistanceKmNum,
       },
       create: {
         id: 1,
-        point1Km,
-        point1Tariff,
-        point2Km,
-        point2Tariff,
-        point3Km,
-        point3Tariff,
+        point1Km: Number(point1Km),
+        point1Tariff: Number(point1Tariff),
+        point2Km: Number(point2Km),
+        point2Tariff: Number(point2Tariff),
+        point3Km: Number(point3Km),
+        point3Tariff: Number(point3Tariff),
         paramA: a,
         paramB: b,
         paramC: c,
-        hyperMinKm,
-        hyperMaxKm,
-        volumeCoeff,
-        marginPercent,
-        maxDistanceKm,
-        startKm: point1Km,
-        startTariff: point1Tariff,
-        endKm: point3Km,
-        endTariff: point3Tariff,
+        hyperMinKm: hyperMinKmNum,
+        hyperMaxKm: hyperMaxKmNum,
+        volumeCoeff: 1,
+        marginPercent: marginPercentNum,
+        maxDistanceKm: maxDistanceKmNum,
+        startKm: Number(point1Km),
+        startTariff: Number(point1Tariff),
+        endKm: Number(point3Km),
+        endTariff: Number(point3Tariff),
       },
     });
 
@@ -322,7 +328,7 @@ export async function POST(request: NextRequest) {
       recordsGenerated,
     });
   } catch (error) {
-    console.error('Error generating hyperbolic tariffs:', error);
+    logger.error('Error generating hyperbolic tariffs:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
