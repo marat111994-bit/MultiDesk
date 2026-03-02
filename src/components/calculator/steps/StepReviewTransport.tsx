@@ -146,6 +146,30 @@ export function StepReviewTransport({
               </div>
             </div>
           )}
+
+          {/* QR-код маршрута */}
+          {pickup.coords && dropoff?.coords && (
+            <div className="border-t border-gray-100 pt-4">
+              <div className="flex flex-col items-center gap-1">
+                {(() => {
+                  const pickupCoords = (pickup.coords || '').replace(/\s+/g, '');
+                  const dropoffCoords = (dropoff.coords || '').replace(/\s+/g, '');
+                  const yandexUrl = `https://yandex.ru/maps/?rtext=${pickupCoords}~${dropoffCoords}&rtt=auto`;
+                  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(yandexUrl)}`;
+                  return (
+                    <img
+                      src={qrUrl}
+                      width={80}
+                      height={80}
+                      alt="Маршрут"
+                      className="rounded"
+                    />
+                  );
+                })()}
+                <span className="text-xs text-gray-400">маршрут</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Итого */}
