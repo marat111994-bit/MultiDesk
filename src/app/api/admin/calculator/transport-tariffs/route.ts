@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/admin/calculator/transport-tariffs
- * Возвращает тарифы на расстояние для превью (первые 30 км)
- * Query params: limit (по умолчанию 30)
+ * Возвращает тарифы на расстояние для превью (первые 100 км)
+ * Query params: limit (по умолчанию 100)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -18,13 +19,15 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get('limit') || '30', 10);
+    const limit = parseInt(searchParams.get('limit') || '100', 10);
 
     const tariffs = await prisma.transportTariff.findMany({
       select: {
         distanceKm: true,
+        baseTariffTkm: true,
         baseTariffT: true,
-        baseTariffM3: true,
+        outgoingTariffTkm: true,
+        outgoingTariffT: true,
       },
       orderBy: { distanceKm: 'asc' },
       take: limit,
@@ -32,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(tariffs);
   } catch (error) {
-    console.error('Error fetching transport tariffs:', error);
+    logger.error('Error fetching transport tariffs:', error);
     return NextResponse.json(
       { error: 'Ошибка при получении тарифов' },
       { status: 500 }

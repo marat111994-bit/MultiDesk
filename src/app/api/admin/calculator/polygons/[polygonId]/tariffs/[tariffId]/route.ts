@@ -2,6 +2,60 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
+
+/**
+ * GET /api/admin/calculator/polygons/[polygonId]/tariffs/[tariffId]
+ * Возвращает тариф с данными CargoItem
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ polygonId: string; tariffId: string }> }
+) {
+  try {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { polygonId, tariffId } = await params;
+
+    if (!polygonId || !tariffId) {
+      return NextResponse.json({ error: 'polygonId и tariffId обязательны' }, { status: 400 });
+    }
+
+    const tariff = await prisma.utilizationTariff.findUnique({
+      where: { id: tariffId },
+      include: {
+        cargoItem: {
+          select: {
+            itemName: true,
+            hazardClass: true,
+          },
+        },
+      },
+    });
+
+    if (!tariff) {
+      return NextResponse.json({ error: 'Тариф не найден' }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      ...tariff,
+      itemName: tariff.cargoItem?.itemName || null,
+      hazardClass: tariff.cargoItem?.hazardClass || null,
+    });
+  } catch (error) {
+    logger.error('Error fetching tariff:', error);
+    return NextResponse.json(
+      { error: 'Ошибка при получении тарифа' },
+      { status: 500 }
+    );
+  }
+}
 
 /**
  * PUT /api/admin/calculator/polygons/[polygonId]/tariffs/[tariffId]
@@ -33,14 +87,9 @@ export async function PUT(
     });
     const validatedData = updateSchema.parse(body);
 
-    // Проверяем существование тарифа
+    // Проверяем существование тарифа по ID
     const existingTariff = await prisma.utilizationTariff.findUnique({
-      where: {
-        fkkoCode_polygonId: {
-          fkkoCode: tariffId, // tariffId это fkkoCode в составе уникального ключа
-          polygonId,
-        },
-      },
+      where: { id: tariffId },
     });
 
     if (!existingTariff) {
@@ -48,12 +97,7 @@ export async function PUT(
     }
 
     const tariff = await prisma.utilizationTariff.update({
-      where: {
-        fkkoCode_polygonId: {
-          fkkoCode: tariffId,
-          polygonId,
-        },
-      },
+      where: { id: tariffId },
       data: {
         tariffRubT: validatedData.tariffRubT,
       },
@@ -64,7 +108,7 @@ export async function PUT(
       tariff,
     });
   } catch (error) {
-    console.error('Error updating tariff:', error);
+    logger.error('Error updating tariff:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -103,14 +147,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'polygonId и tariffId обязательны' }, { status: 400 });
     }
 
-    // Проверяем существование тарифа
+    // Проверяем существование тарифа по ID
     const existingTariff = await prisma.utilizationTariff.findUnique({
-      where: {
-        fkkoCode_polygonId: {
-          fkkoCode: tariffId,
-          polygonId,
-        },
-      },
+      where: { id: tariffId },
     });
 
     if (!existingTariff) {
@@ -118,19 +157,14 @@ export async function DELETE(
     }
 
     await prisma.utilizationTariff.delete({
-      where: {
-        fkkoCode_polygonId: {
-          fkkoCode: tariffId,
-          polygonId,
-        },
-      },
+      where: { id: tariffId },
     });
 
     return NextResponse.json({
       message: 'Тариф удалён',
     });
   } catch (error) {
-    console.error('Error deleting tariff:', error);
+    logger.error('Error deleting tariff:', error);
     return NextResponse.json(
       { error: 'Ошибка при удалении тарифа' },
       { status: 500 }

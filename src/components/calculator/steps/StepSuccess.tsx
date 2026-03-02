@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { FormData } from '@/lib/types/calculator';
 import { formatPrice } from '@/lib/utils/calculator';
@@ -12,46 +12,8 @@ interface StepSuccessProps {
 
 export function StepSuccess({ formData, onNewCalculation }: StepSuccessProps) {
   const router = useRouter();
-  const [applicationId, setApplicationId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const saveApplication = async () => {
-      try {
-        const response = await fetch('/api/calculator/applications', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contact: formData.contact,
-            company: formData.company,
-            cargo: formData.cargo,
-            pickup: formData.pickup,
-            dropoff: formData.dropoff,
-            selectedOption: formData.selectedOption,
-            result: formData.result,
-            totalPrice: formData.result?.totalPrice || formData.selectedOption?.totalPrice || 0,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Ошибка сохранения заявки');
-        }
-
-        const data = await response.json();
-        setApplicationId(data.id);
-      } catch (err) {
-        console.error('Error saving application:', err);
-        setError('Не удалось сохранить заявку. Попробуйте позже.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    saveApplication();
-  }, [formData]);
+  // applicationId уже сохранён в formData.applicationId на шаге 6
+  const applicationId = formData.applicationId || null;
 
   const handleDownloadPdf = () => {
     if (applicationId) {
@@ -62,35 +24,6 @@ export function StepSuccess({ formData, onNewCalculation }: StepSuccessProps) {
   const handleNewCalculation = () => {
     router.push('/calculator');
   };
-
-  if (isLoading) {
-    return (
-      <div className="text-center py-12">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <p className="mt-4 text-gray-600">Сохранение заявки...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
-          <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Ошибка</h2>
-        <p className="text-gray-600 mb-6">{error}</p>
-        <button
-          onClick={handleNewCalculation}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-        >
-          На главную
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div className="text-center py-8">

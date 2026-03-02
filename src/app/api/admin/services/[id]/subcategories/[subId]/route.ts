@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 export async function GET(
   request: NextRequest,
@@ -33,7 +34,7 @@ export async function GET(
 
     return NextResponse.json(subcategory)
   } catch (error) {
-    console.error("Error fetching subcategory:", error)
+    logger.error("Error fetching subcategory:", error)
     return NextResponse.json(
       { error: "Failed to fetch subcategory" },
       { status: 500 }
@@ -79,7 +80,7 @@ export async function PUT(
 
     return NextResponse.json(subcategory)
   } catch (error) {
-    console.error("Error updating subcategory:", error)
+    logger.error("Error updating subcategory:", error)
     return NextResponse.json(
       { error: "Failed to update subcategory" },
       { status: 500 }
@@ -108,7 +109,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error deleting subcategory:", error)
+    logger.error("Error deleting subcategory:", error)
     return NextResponse.json(
       { error: "Failed to delete subcategory" },
       { status: 500 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 
 /**
  * API для поиска компании по ИНН через DaData
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest) {
       ogrn: partyData.ogrn,
     });
   } catch (error) {
-    console.error("Ошибка при поиске компании:", error);
+    logger.error('company: error', { message: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: "Внутренняя ошибка сервера" },
       { status: 500 }

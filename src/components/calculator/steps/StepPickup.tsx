@@ -27,13 +27,16 @@ export function StepPickup({ formData, onChange, onNext, onBack }: StepPickupPro
 
       setIsLoading(true);
       try {
+        console.log('[StepPickup] Fetching suggestions for:', query);
         const response = await fetch(`/api/address/suggest/${encodeURIComponent(query)}`);
+        console.log('[StepPickup] Response status:', response.status);
         if (response.ok) {
           const data = await response.json();
+          console.log('[StepPickup] Suggestions received:', data);
           setSuggestions(data);
         }
       } catch (error) {
-        console.error('Error fetching address suggestions:', error);
+        console.error('[StepPickup] Error fetching address suggestions:', error);
       } finally {
         setIsLoading(false);
       }
@@ -43,6 +46,7 @@ export function StepPickup({ formData, onChange, onNext, onBack }: StepPickupPro
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    console.log('[StepPickup] Address changed to:', value);
     onChange('pickup.address', value);
     if (value.trim()) {
       setErrors((prev) => ({ ...prev, address: undefined }));
@@ -55,11 +59,45 @@ export function StepPickup({ formData, onChange, onNext, onBack }: StepPickupPro
     onChange('pickup.mode', mode);
   };
 
-  const selectSuggestion = (suggestion: AddressSuggestion) => {
+  const selectSuggestion = async (suggestion: AddressSuggestion) => {
     onChange('pickup.address', suggestion.value);
-    onChange('pickup.coords', suggestion.coords);
-    setSuggestions([]);
-    setShowSuggestions(false);
+
+    // Если координаты есть в подсказке — используем их
+    if (suggestion.coords) {
+      onChange('pickup.coords', suggestion.coords);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    } else {
+      // Иначе геокодируем адрес
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/address/geocode/${encodeURIComponent(suggestion.value)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.lat && data.lon) {
+            onChange('pickup.coords', `${data.lat} ${data.lon}`);
+          }
+        } else {
+          // Fallback: если геокодирование не удалось, пробуем через адрес из input
+          const addressValue = formData.pickup.address;
+          if (addressValue.trim()) {
+            const fallbackResponse = await fetch(`/api/address/geocode/${encodeURIComponent(addressValue)}`);
+            if (fallbackResponse.ok) {
+              const fallbackData = await fallbackResponse.json();
+              if (fallbackData.lat && fallbackData.lon) {
+                onChange('pickup.coords', `${fallbackData.lat} ${fallbackData.lon}`);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[StepPickup] Error geocoding address:', error);
+      } finally {
+        setIsLoading(false);
+      }
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
   };
 
   const validate = (): boolean => {
@@ -67,6 +105,10 @@ export function StepPickup({ formData, onChange, onNext, onBack }: StepPickupPro
 
     if (!formData.pickup.address.trim()) {
       newErrors.address = 'Введите адрес погрузки';
+    }
+
+    if (!formData.pickup.coords) {
+      newErrors.address = 'Координаты не получены. Выберите адрес из подсказок и дождитесь геокодирования';
     }
 
     setErrors(newErrors);
@@ -105,15 +147,21 @@ export function StepPickup({ formData, onChange, onNext, onBack }: StepPickupPro
             {isLoading && (
               <div className="px-4 py-3 text-gray-500 text-sm">Загрузка...</div>
             )}
-            {suggestions.map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => selectSuggestion(suggestion)}
-                className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
-              >
-                {suggestion.value}
-              </button>
-            ))}
+            {!isLoading && suggestions.length === 0 && (
+              <div className="px-4 py-3 text-gray-500 text-sm">Нет подсказок</div>
+            )}
+            {suggestions.map((suggestion, index) => {
+              console.log('[StepPickup] Rendering suggestion:', suggestion);
+              return (
+                <button
+                  key={index}
+                  onClick={() => selectSuggestion(suggestion)}
+                  className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
+                >
+                  {suggestion.value}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

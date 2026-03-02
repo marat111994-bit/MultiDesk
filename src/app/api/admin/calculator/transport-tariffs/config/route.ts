@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 const CONFIG_ID = 1;
 
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(config);
   } catch (error) {
-    console.error('Error fetching transport tariff config:', error);
+    logger.error('Error fetching transport tariff config:', error);
     return NextResponse.json(
       { error: 'Ошибка при получении конфигурации' },
       { status: 500 }
@@ -102,7 +103,7 @@ export async function PUT(request: NextRequest) {
       config,
     });
   } catch (error) {
-    console.error('Error updating transport tariff config:', error);
+    logger.error('Error updating transport tariff config:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

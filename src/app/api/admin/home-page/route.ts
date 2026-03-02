@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
       whyUsImageAlt: homePage.whyUsImageAlt || "Команда DanMax",
     })
   } catch (error) {
-    console.error('Error fetching home page settings:', error)
+    logger.error('Error fetching home page settings:', error)
     return NextResponse.json(
       { error: 'Failed to fetch settings' },
       { status: 500 }
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error saving home page settings:', error)
+    logger.error('Error saving home page settings:', error)
     return NextResponse.json(
       { error: 'Failed to save settings' },
       { status: 500 }

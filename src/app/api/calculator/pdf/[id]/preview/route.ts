@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { generateCommercialOfferHtml } from '@/lib/pdf/generate-pdf';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/calculator/pdf/[id]/preview
@@ -75,7 +76,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error generating preview:', error);
+    logger.error('pdf/preview: error', { message: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Ошибка при генерации превью', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

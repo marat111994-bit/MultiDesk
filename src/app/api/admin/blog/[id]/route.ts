@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 export async function GET(
   request: NextRequest,
@@ -27,7 +28,7 @@ export async function GET(
 
     return NextResponse.json(post)
   } catch (error) {
-    console.error("Error fetching blog post:", error)
+    logger.error("Error fetching blog post:", error)
     return NextResponse.json(
       { error: "Failed to fetch blog post" },
       { status: 500 }
@@ -73,7 +74,7 @@ export async function PUT(
 
     return NextResponse.json(post)
   } catch (error) {
-    console.error("Error updating blog post:", error)
+    logger.error("Error updating blog post:", error)
     return NextResponse.json(
       { error: "Failed to update blog post" },
       { status: 500 }
@@ -102,7 +103,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error deleting blog post:", error)
+    logger.error("Error deleting blog post:", error)
     return NextResponse.json(
       { error: "Failed to delete blog post" },
       { status: 500 }

@@ -25,6 +25,7 @@ yarn-error.log*
 # Local env files
 .env
 .env*.local
+.env.*.local
 
 # Vercel
 .vercel
@@ -43,9 +44,13 @@ next-env.d.ts
 # Logs
 *.log
 server.log
+logs/*.log
 
 # Sitemap (generated)
 public/sitemap.xml
+
+# Logs
+logs/
 
 # Prisma (SQLite dev DB - exclude from git)
 prisma/dev.db

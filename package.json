@@ -12,7 +12,11 @@
     "db:push": "npx prisma db push",
     "db:seed": "npx prisma db seed",
     "images:placeholders": "npx tsx scripts/create-placeholder-images.ts",
-    "import:calculator": "npx tsx scripts/import-calculator-data.ts ./data"
+    "import:calculator": "npx tsx scripts/import-calculator-data.ts ./data",
+"import:cargo": "npx tsx scripts/import-cargo-items.ts",
+    "logs": "powershell -Command \"Get-Content logs/app.log -Wait -Tail 50\"",
+    "logs:errors": "powershell -Command \"Select-String -Pattern 'ERROR' logs/app.log | Select-Object -Last 50\"",
+    "logs:clear": "powershell -Command \"Clear-Content logs/app.log\""
   },
   "_note": "Для генерации PDF коммерческих предложений установите: npm install puppeteer-core",
   "prisma": {
@@ -55,6 +59,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "csv-parse": "^6.1.0",
+    "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
     "prisma": "^5.22.0",

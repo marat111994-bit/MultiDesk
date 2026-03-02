@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(services)
   } catch (error) {
-    console.error("Error fetching services:", error)
+    logger.error("Error fetching services:", error)
     return NextResponse.json(
       { error: "Failed to fetch services" },
       { status: 500 }
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(service)
   } catch (error) {
-    console.error("Error creating service:", error)
+    logger.error("Error creating service:", error)
     return NextResponse.json(
       { error: "Failed to create service" },
       { status: 500 }

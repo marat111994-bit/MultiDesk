@@ -23,37 +23,57 @@ export function StepPolygonsAuto({ formData, onChange, onNext, onBack }: StepPol
 
   useEffect(() => {
     const fetchPolygons = async () => {
+      // Проверяем, что данные заполнены
+      if (!formData.pickup.coords || !formData.cargo.fkkoCode || formData.cargo.volume <= 0) {
+        console.log('[StepPolygonsAuto] Missing required data:', {
+          coords: formData.pickup.coords,
+          fkkoCode: formData.cargo.fkkoCode,
+          volume: formData.cargo.volume,
+          unit: formData.cargo.unit,
+          compaction: formData.cargo.compaction,
+        });
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
 
       try {
+        const requestBody = {
+          pickupCoords: formData.pickup.coords,
+          fkkoCode: formData.cargo.fkkoCode,
+          volume: formData.cargo.volume,
+          unit: formData.cargo.unit,
+          compaction: formData.cargo.compaction,
+        };
+        
+        console.log('[StepPolygonsAuto] Sending request:', JSON.stringify(requestBody, null, 2));
+
         const response = await fetch('/api/calculator/calculate-disposal', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            pickupCoords: formData.pickup.coords,
-            fkkoCode: formData.cargo.fkkoCode,
-            volume: formData.cargo.volume,
-            unit: formData.cargo.unit,
-            compaction: formData.cargo.compaction,
-          }),
+          body: JSON.stringify(requestBody),
         });
 
+        const responseData = await response.json();
+        console.log('[StepPolygonsAuto] Response:', response.status, responseData);
+
         if (!response.ok) {
-          throw new Error('Ошибка поиска полигонов');
+          throw new Error(responseData.error || 'Ошибка поиска полигонов');
         }
 
-        const data = await response.json();
-        setPolygons(data.polygons || []);
+        const data = responseData;
+        const polygonsList = data.options || data.polygons || [];
+        setPolygons(polygonsList);
 
         // Выбираем первый (самый дешёвый) по умолчанию
-        if (data.polygons && data.polygons.length > 0) {
-          setSelectedId(data.polygons[0].id);
+        if (polygonsList.length > 0) {
+          setSelectedId(polygonsList[0].id);
         }
       } catch (err) {
-        console.error('Error fetching polygons:', err);
+        console.error('[StepPolygonsAuto] Error fetching polygons:', err);
         setError('Не удалось найти полигоны. Попробуйте позже.');
       } finally {
         setIsLoading(false);
@@ -64,12 +84,12 @@ export function StepPolygonsAuto({ formData, onChange, onNext, onBack }: StepPol
   }, [formData.pickup.coords, formData.cargo]);
 
   const handleSelect = (polygon: Polygon) => {
-    setSelectedId(polygon.id);
+    setSelectedId(polygon.polygonId);
     onChange('selectedOption', {
-      polygonId: polygon.id,
-      polygonName: polygon.name,
-      polygonAddress: polygon.address,
-      polygonCoords: polygon.coords,
+      polygonId: polygon.polygonId,
+      polygonName: polygon.polygonName,
+      polygonAddress: polygon.polygonAddress,
+      polygonCoords: polygon.polygonCoords,
       distanceKm: polygon.distanceKm,
       transportPrice: polygon.transportPrice,
       utilizationPrice: polygon.utilizationPrice,
@@ -150,12 +170,12 @@ export function StepPolygonsAuto({ formData, onChange, onNext, onBack }: StepPol
       {/* Grid с карточками полигонов */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {polygons.map((polygon, index) => {
-          const isSelected = selectedId === polygon.id;
+          const isSelected = selectedId === polygon.polygonId;
           const isBest = index === 0; // Первый — самый дешёвый
 
           return (
             <div
-              key={polygon.id}
+              key={polygon.polygonId}
               onClick={() => handleSelect(polygon)}
               className={`cursor-pointer rounded-xl border-2 p-4 transition-all duration-200 ${
                 isSelected
@@ -173,8 +193,8 @@ export function StepPolygonsAuto({ formData, onChange, onNext, onBack }: StepPol
               )}
 
               {/* Название и адрес */}
-              <h4 className="font-semibold text-gray-900 mb-1">{polygon.name}</h4>
-              <p className="text-sm text-gray-500 mb-3">{polygon.address}</p>
+              <h4 className="font-semibold text-gray-900 mb-1">{polygon.polygonName}</h4>
+              <p className="text-sm text-gray-500 mb-3">{polygon.polygonAddress}</p>
 
               {/* Расстояние */}
               <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 export async function PUT(
   request: NextRequest,
@@ -28,7 +29,7 @@ export async function PUT(
 
     return NextResponse.json(post)
   } catch (error) {
-    console.error("Error toggling publish status:", error)
+    logger.error("Error toggling publish status:", error)
     return NextResponse.json(
       { error: "Failed to toggle publish status" },
       { status: 500 }

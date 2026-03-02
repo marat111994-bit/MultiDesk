@@ -1,7 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CargoData } from '@/lib/types/calculator';
+
+interface CargoSearchResult {
+  fkkoCode: string | null;
+  itemName: string;
+  categoryCode: string;
+  hazardClass: number;
+}
 
 interface StepCargoProps {
   formData: { cargo: CargoData };
@@ -11,26 +18,101 @@ interface StepCargoProps {
 }
 
 export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps) {
-  const [errors, setErrors] = useState<{ name?: string; fkkoCode?: string; volume?: string }>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<CargoSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [errors, setErrors] = useState<{ volume?: string; compaction?: string }>({});
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    onChange('cargo.name', value);
-    if (value.trim()) {
-      setErrors((prev) => ({ ...prev, name: undefined }));
+  // Debounce поиск при вводе
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
+
+    if (searchQuery.length >= 2) {
+      setIsSearching(true);
+      searchTimeoutRef.current = setTimeout(async () => {
+        try {
+          const response = await fetch(
+            `/api/admin/calculator/cargo-items/search?q=${encodeURIComponent(searchQuery)}&limit=10`
+          );
+          if (response.ok) {
+            const results = await response.json();
+            setSearchResults(results);
+            setShowDropdown(true);
+          }
+        } catch (error) {
+          console.error('Ошибка поиска грузов:', error);
+        } finally {
+          setIsSearching(false);
+        }
+      }, 300);
+    } else {
+      setSearchResults([]);
+      setShowDropdown(false);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Закрытие дропдауна при клике вне
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleCargoSelect = (item: CargoSearchResult) => {
+    const cargoData = {
+      name: item.itemName,
+      fkkoCode: item.fkkoCode || '',
+      code: item.fkkoCode || '',
+      hazardClass: item.hazardClass,
+      categoryCode: item.categoryCode,
+      volume: formData.cargo.volume,
+      unit: formData.cargo.unit,
+      compaction: formData.cargo.compaction,
+    };
+    onChange('cargo', cargoData);
+    setSearchQuery(item.fkkoCode ? `${item.fkkoCode} — ${item.itemName}` : item.itemName);
+    setShowDropdown(false);
+    setSearchResults([]);
   };
 
-  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    onChange('cargo.code', value);
+  const handleClearCargo = () => {
+    onChange('cargo', {
+      name: '',
+      fkkoCode: '',
+      code: '',
+      hazardClass: undefined,
+      categoryCode: '',
+      volume: formData.cargo.volume,
+      unit: formData.cargo.unit,
+      compaction: formData.cargo.compaction,
+    });
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowDropdown(false);
   };
 
-  const handleFkkoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    onChange('cargo.fkkoCode', value);
-    if (value.trim()) {
-      setErrors((prev) => ({ ...prev, fkkoCode: undefined }));
+    setSearchQuery(value);
+    // Если поле очищено вручную — сбрасываем выбор груза
+    if (!value.trim()) {
+      handleClearCargo();
     }
   };
 
@@ -48,23 +130,32 @@ export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps
   };
 
   const handleCompactionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value) || 1;
+    const value = parseFloat(e.target.value) || 1.0;
     onChange('cargo.compaction', value);
+    if (value > 0) {
+      setErrors((prev) => ({ ...prev, compaction: undefined }));
+    }
   };
 
   const validate = (): boolean => {
-    const newErrors: { name?: string; fkkoCode?: string; volume?: string } = {};
+    const newErrors: { volume?: string; compaction?: string } = {};
 
-    if (!formData.cargo.name.trim()) {
-      newErrors.name = 'Введите название груза';
-    }
-
-    if (!formData.cargo.fkkoCode.trim()) {
-      newErrors.fkkoCode = 'Введите код ФККО';
+    // Груз должен быть выбран (fkkoCode) ИЛИ введено название вручную
+    const cargoSelected = formData.cargo.fkkoCode || formData.cargo.name;
+    if (!cargoSelected) {
+      setErrors((prev) => ({
+        ...prev,
+        volume: 'Выберите груз из списка или введите название вручную',
+      }));
+      return false;
     }
 
     if (formData.cargo.volume <= 0) {
       newErrors.volume = 'Введите объём больше 0';
+    }
+
+    if (formData.cargo.compaction <= 0) {
+      newErrors.compaction = 'Введите коэффициент больше 0';
     }
 
     setErrors(newErrors);
@@ -77,58 +168,132 @@ export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps
     }
   };
 
+  const isCargoSelected = !!formData.cargo.fkkoCode || !!formData.cargo.name;
+  const isInert = formData.cargo.categoryCode === 'INERT';
+
+  // Обрезка названия до 70 символов
+  const truncateName = (name: string, maxLength = 70) => {
+    if (name.length <= maxLength) return name;
+    return name.slice(0, maxLength - 2) + '...';
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <label htmlFor="cargoName" className="block text-sm font-medium text-gray-700 mb-2">
-          Название груза *
+      {/* БЛОК 1: Умный поиск груза */}
+      <div className="relative" ref={dropdownRef}>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Поиск груза *
         </label>
-        <input
-          type="text"
-          id="cargoName"
-          value={formData.cargo.name}
-          onChange={handleNameChange}
-          placeholder="ТКО, строительные отходы и т.д."
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
-            errors.name ? 'border-red-500' : 'border-gray-300'
-          }`}
-        />
-        {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+        
+        {!isCargoSelected ? (
+          <>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                placeholder="🔍 Введите код ФККО или название груза..."
+                className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+              />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                🔍
+              </span>
+              {isSearching && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  ⏳
+                </span>
+              )}
+            </div>
+
+            {showDropdown && searchResults.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                {searchResults.map((item, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleCargoSelect(item)}
+                    className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-semibold text-gray-900">
+                        {item.fkkoCode || 'Без ФККО'}
+                      </span>
+                      <div className="flex gap-2">
+                        <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 rounded">
+                          {item.categoryCode}
+                        </span>
+                        <span className="px-2 py-0.5 text-xs bg-orange-100 text-orange-700 rounded">
+                          кл. {item.hazardClass}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {truncateName(item.itemName)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {showDropdown && searchResults.length === 0 && searchQuery.length >= 2 && !isSearching && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-gray-500">
+                Ничего не найдено
+              </div>
+            )}
+          </>
+        ) : (
+          /* Карточка выбранного груза */
+          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-green-600">✓</span>
+                  {formData.cargo.fkkoCode && (
+                    <span className="font-semibold text-gray-900">
+                      {formData.cargo.fkkoCode}
+                    </span>
+                  )}
+                  {!formData.cargo.fkkoCode && isInert && (
+                    <span className="font-semibold text-gray-900">
+                      {formData.cargo.name}
+                    </span>
+                  )}
+                  <div className="flex gap-2">
+                    {formData.cargo.categoryCode && (
+                      <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 rounded">
+                        {formData.cargo.categoryCode}
+                      </span>
+                    )}
+                    {formData.cargo.hazardClass && (
+                      <span className="px-2 py-0.5 text-xs bg-orange-100 text-orange-700 rounded">
+                        Класс опасности: {formData.cargo.hazardClass}
+                      </span>
+                    )}
+                    {isInert && (
+                      <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">
+                        Инертный материал
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {!isInert && formData.cargo.name && (
+                  <div className="text-sm text-gray-600 mt-1">
+                    {truncateName(formData.cargo.name, 100)}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={handleClearCargo}
+                className="ml-4 text-gray-400 hover:text-red-500 transition-colors"
+                title="Изменить"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="fkkoCode" className="block text-sm font-medium text-gray-700 mb-2">
-            Код ФККО *
-          </label>
-          <input
-            type="text"
-            id="fkkoCode"
-            value={formData.cargo.fkkoCode}
-            onChange={handleFkkoChange}
-            placeholder="7 00 000 00 00 0"
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
-              errors.fkkoCode ? 'border-red-500' : 'border-gray-300'
-            }`}
-          />
-          {errors.fkkoCode && <p className="mt-1 text-sm text-red-600">{errors.fkkoCode}</p>}
-        </div>
-
-        <div>
-          <label htmlFor="cargoCode" className="block text-sm font-medium text-gray-700 mb-2">
-            Код груза (внутренний)
-          </label>
-          <input
-            type="text"
-            id="cargoCode"
-            value={formData.cargo.code}
-            onChange={handleCodeChange}
-            placeholder="Необязательно"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-          />
-        </div>
-      </div>
-
+      {/* БЛОК 2: Объём */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label htmlFor="volume" className="block text-sm font-medium text-gray-700 mb-2">
@@ -165,9 +330,10 @@ export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps
         </div>
       </div>
 
+      {/* БЛОК 3: Коэффициент уплотнения */}
       <div>
         <label htmlFor="compaction" className="block text-sm font-medium text-gray-700 mb-2">
-          Коэффициент уплотнения
+          Коэффициент уплотнения (т/м³)
         </label>
         <input
           type="number"
@@ -175,14 +341,19 @@ export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps
           value={formData.cargo.compaction}
           onChange={handleCompactionChange}
           min="0.1"
-          step="0.1"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+          step="0.01"
+          placeholder="1.0"
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
+            errors.compaction ? 'border-red-500' : 'border-gray-300'
+          }`}
         />
         <p className="mt-1 text-sm text-gray-500">
-          Значение по умолчанию: 1.0. Укажите меньше для лёгких грузов (например, 0.3 для пластика).
+          Плотность груза в т/м³. Грунт ≈ 1.5–1.8 · Бетон ≈ 2.4 · Снег ≈ 0.3
         </p>
+        {errors.compaction && <p className="mt-1 text-sm text-red-600">{errors.compaction}</p>}
       </div>
 
+      {/* Кнопки навигации */}
       <div className="flex gap-4 pt-4">
         <button
           onClick={onBack}

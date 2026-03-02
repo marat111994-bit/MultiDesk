@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/address/geocode/[address]
@@ -20,11 +21,11 @@ export async function GET(
       );
     }
 
-    const apiKey = process.env.YANDEX_API_KEY;
+    const apiKey = process.env.YANDEX_GEOCODER_KEY || process.env.YANDEX_API_KEY || process.env.YANDEX_SUGGEST_KEY;
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'YANDEX_API_KEY не настроен' },
+        { error: 'YANDEX_GEOCODER_KEY или YANDEX_API_KEY не настроен' },
         { status: 500 }
       );
     }
@@ -73,7 +74,7 @@ export async function GET(
 
     return NextResponse.json({ lat, lon });
   } catch (error) {
-    console.error('Error geocoding address:', error);
+    logger.error('geocode: error', { message: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Ошибка при геокодировании адреса' },
       { status: 500 }

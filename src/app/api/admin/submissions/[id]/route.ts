@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 export async function PUT(
   request: NextRequest,
@@ -28,7 +29,7 @@ export async function PUT(
 
     return NextResponse.json(submission)
   } catch (error) {
-    console.error("Error updating submission:", error)
+    logger.error("Error updating submission:", error)
     return NextResponse.json(
       { error: "Failed to update submission" },
       { status: 500 }

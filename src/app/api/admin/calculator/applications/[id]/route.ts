@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/admin/calculator/applications/[id]
@@ -51,7 +52,7 @@ export async function GET(
       pdfData: parsedPdfData,
     });
   } catch (error) {
-    console.error('Error fetching application:', error);
+    logger.error('Error fetching application:', error);
     return NextResponse.json(
       { error: 'Ошибка при получении заявки' },
       { status: 500 }
@@ -106,7 +107,7 @@ export async function PATCH(
       },
     });
   } catch (error) {
-    console.error('Error updating application status:', error);
+    logger.error('Error updating application status:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

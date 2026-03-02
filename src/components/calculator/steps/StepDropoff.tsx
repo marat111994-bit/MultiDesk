@@ -55,11 +55,45 @@ export function StepDropoff({ formData, onChange, onNext, onBack }: StepDropoffP
     onChange('dropoff.mode', mode);
   };
 
-  const selectSuggestion = (suggestion: AddressSuggestion) => {
+  const selectSuggestion = async (suggestion: AddressSuggestion) => {
     onChange('dropoff.address', suggestion.value);
-    onChange('dropoff.coords', suggestion.coords);
-    setSuggestions([]);
-    setShowSuggestions(false);
+
+    // Если координаты есть в подсказке — используем их
+    if (suggestion.coords) {
+      onChange('dropoff.coords', suggestion.coords);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    } else {
+      // Иначе геокодируем адрес
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/address/geocode/${encodeURIComponent(suggestion.value)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.lat && data.lon) {
+            onChange('dropoff.coords', `${data.lat} ${data.lon}`);
+          }
+        } else {
+          // Fallback: если геокодирование не удалось, пробуем через адрес из input
+          const addressValue = formData.dropoff?.address || '';
+          if (addressValue.trim()) {
+            const fallbackResponse = await fetch(`/api/address/geocode/${encodeURIComponent(addressValue)}`);
+            if (fallbackResponse.ok) {
+              const fallbackData = await fallbackResponse.json();
+              if (fallbackData.lat && fallbackData.lon) {
+                onChange('dropoff.coords', `${fallbackData.lat} ${fallbackData.lon}`);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[StepDropoff] Error geocoding address:', error);
+      } finally {
+        setIsLoading(false);
+      }
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
   };
 
   const validate = (): boolean => {
@@ -67,6 +101,10 @@ export function StepDropoff({ formData, onChange, onNext, onBack }: StepDropoffP
 
     if (!formData.dropoff?.address.trim()) {
       newErrors.address = 'Введите адрес выгрузки';
+    }
+
+    if (!formData.dropoff?.coords) {
+      newErrors.address = 'Координаты не получены. Выберите адрес из подсказок и дождитесь геокодирования';
     }
 
     setErrors(newErrors);

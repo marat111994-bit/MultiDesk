@@ -20,6 +20,8 @@ export interface CargoData {
   volume: number;
   unit: 't' | 'm3';
   compaction: number;
+  categoryCode?: string;
+  hazardClass?: string;
 }
 
 export interface AddressData {
@@ -76,13 +78,14 @@ export interface AddressSuggestion {
 }
 
 export interface Polygon {
-  id: string;
-  name: string;
-  address: string;
-  region: string;
-  coords: string;
+  polygonId: string;
+  polygonName: string;
+  polygonAddress: string;
+  polygonCoords: string | null;
   distanceKm: number;
+  transportTariff: number;
   transportPrice: number;
+  utilizationTariff: number;
   utilizationPrice: number;
   totalPrice: number;
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(faqItems)
   } catch (error) {
-    console.error("Error fetching FAQ:", error)
+    logger.error("Error fetching FAQ:", error)
     return NextResponse.json(
       { error: "Failed to fetch FAQ" },
       { status: 500 }
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(faqItem)
   } catch (error) {
-    console.error("Error creating FAQ:", error)
+    logger.error("Error creating FAQ:", error)
     return NextResponse.json(
       { error: "Failed to create FAQ" },
       { status: 500 }

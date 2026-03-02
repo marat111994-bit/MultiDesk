@@ -295,14 +295,15 @@ model CargoItem {
   itemCode     String        @unique
   categoryCode String
   itemName     String
-  fkkoCode     String?
+  fkkoCode     String?       @unique
   hazardClass  Int?
   category     CargoCategory @relation(fields: [categoryCode], references: [categoryCode], onDelete: Cascade)
+  utilizationTariffs UtilizationTariff[]
 }
 
 // 3. Матрица тарифов перевозки (1 запись = 1 км)
 model TransportTariff {
-  id                 Int      @id @default(0)
+  id                 Int      @id @default(autoincrement())
   distanceKm         Int      @unique
   baseTariffT        Float
   baseTariffTkm      Float
@@ -373,6 +374,7 @@ model UtilizationTariff {
   polygonId  String
   tariffRubT Float
   polygon    Polygon @relation(fields: [polygonId], references: [polygonId], onDelete: Cascade)
+  cargoItem  CargoItem? @relation(fields: [fkkoCode], references: [fkkoCode])
 
   @@unique([fkkoCode, polygonId])
   @@index([fkkoCode, polygonId])

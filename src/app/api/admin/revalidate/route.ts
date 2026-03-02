@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { getToken } from 'next-auth/jwt'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Revalidation error:', error)
+    logger.error('Revalidation error:', error)
     return NextResponse.json(
       { error: 'Failed to revalidate' },
       { status: 500 }

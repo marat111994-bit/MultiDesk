@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/admin/calculator/polygons
@@ -30,13 +31,32 @@ export async function GET(request: NextRequest) {
 
     // Поиск по текстовым полям
     if (search) {
+      // Разбиваем поисковый запрос на слова для более гибкого поиска
+      const searchWords = search.trim().split(/\s+/).filter(Boolean);
+      
       where.OR = [
-        { receiverName: { contains: search } },
-        { facilityAddress: { contains: search } },
-        { region: { contains: search } },
-        { polygonId: { contains: search } },
-        { receiverInn: { contains: search } },
+        // Поиск по полному названию (не чувствительный к регистру)
+        { receiverName: { contains: search, mode: 'insensitive' } },
+        { facilityAddress: { contains: search, mode: 'insensitive' } },
+        { region: { contains: search, mode: 'insensitive' } },
+        { polygonId: { contains: search, mode: 'insensitive' } },
+        { receiverInn: { contains: search, mode: 'insensitive' } },
+        // Поиск по названию без кавычек и "ООО"/"ИП"
+        { receiverName: { contains: search.replace(/["']/g, '').replace(/^(ООО|ИП|АО|ПАО)\s*/i, ''), mode: 'insensitive' } },
       ];
+
+      // Если поисковых слов несколько, добавляем поиск по каждому слову
+      if (searchWords.length > 1) {
+        searchWords.forEach(word => {
+          if (word.length >= 2) {
+            where.OR.push(
+              { receiverName: { contains: word, mode: 'insensitive' } },
+              { facilityAddress: { contains: word, mode: 'insensitive' } },
+              { region: { contains: word, mode: 'insensitive' } }
+            );
+          }
+        });
+      }
     }
 
     const polygons = await prisma.polygon.findMany({
@@ -70,7 +90,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(polygons);
   } catch (error) {
-    console.error('Error fetching polygons:', error);
+    logger.error('Error fetching polygons:', error);
     return NextResponse.json(
       { error: 'Ошибка при получении полигонов' },
       { status: 500 }

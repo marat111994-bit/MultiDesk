@@ -68,13 +68,35 @@ export default function DisposalAutoCalculatorPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contact: formData.contact,
-          company: formData.company,
-          cargo: formData.cargo,
-          pickup: formData.pickup,
-          selectedOption: formData.selectedOption,
+          serviceType: 'transport_disposal_auto',
+          // Контакты
+          contactName: formData.contact.name,
+          contactPhone: formData.contact.phone,
+          contactEmail: formData.contact.email,
+          // Компания
+          companyName: formData.company.name,
+          companyInn: formData.company.inn,
+          // Груз
+          cargoName: formData.cargo.name,
+          cargoCode: formData.cargo.code,
+          fkkoCode: formData.cargo.fkkoCode,
+          volume: formData.cargo.volume,
+          unit: formData.cargo.unit,
+          compaction: formData.cargo.compaction,
+          // Погрузка
+          pickupAddress: formData.pickup.address,
+          pickupCoords: formData.pickup.coords,
+          pickupMode: formData.pickup.mode,
+          // Полигон
+          polygonId: formData.selectedOption?.polygonId || null,
+          polygonName: formData.selectedOption?.polygonName || null,
+          polygonAddress: formData.selectedOption?.polygonAddress || null,
+          polygonCoords: formData.selectedOption?.polygonCoords || null,
+          // Результат
+          distanceKm: formData.selectedOption?.distanceKm || null,
+          transportPrice: formData.selectedOption?.transportPrice || null,
+          utilizationPrice: formData.selectedOption?.utilizationPrice || null,
           totalPrice: formData.selectedOption?.totalPrice || 0,
-          serviceType: 'disposal-auto',
         }),
       });
 

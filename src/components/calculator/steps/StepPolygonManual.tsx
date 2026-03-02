@@ -76,7 +76,7 @@ export function StepPolygonManual({ formData, onChange, onNext, onBack }: StepPo
         },
         body: JSON.stringify({
           pickupCoords: formData.pickup.coords,
-          polygonId: polygon.id,
+          polygonId: polygon.polygonId,
           fkkoCode: formData.cargo.fkkoCode,
           volume: formData.cargo.volume,
           unit: formData.cargo.unit,
@@ -98,10 +98,10 @@ export function StepPolygonManual({ formData, onChange, onNext, onBack }: StepPo
       });
 
       onChange('selectedOption', {
-        polygonId: polygon.id,
-        polygonName: polygon.name,
-        polygonAddress: polygon.address,
-        polygonCoords: polygon.coords,
+        polygonId: polygon.polygonId,
+        polygonName: polygon.polygonName,
+        polygonAddress: polygon.polygonAddress,
+        polygonCoords: polygon.polygonCoords,
         distanceKm: result.distanceKm,
         transportPrice: result.transportPrice,
         utilizationPrice: result.utilizationPrice,
@@ -148,16 +148,13 @@ export function StepPolygonManual({ formData, onChange, onNext, onBack }: StepPo
             )}
             {polygons.map((polygon, index) => (
               <button
-                key={polygon.id}
+                key={polygon.polygonId}
                 onClick={() => handleSelectPolygon(polygon)}
                 disabled={isCalculating}
                 className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0 disabled:opacity-50"
               >
-                <p className="font-medium text-gray-900">{polygon.name}</p>
-                <p className="text-gray-500 text-xs">{polygon.address}</p>
-                {polygon.region && (
-                  <p className="text-gray-400 text-xs">{polygon.region}</p>
-                )}
+                <p className="font-medium text-gray-900">{polygon.polygonName}</p>
+                <p className="text-gray-500 text-xs">{polygon.polygonAddress}</p>
               </button>
             ))}
           </div>
@@ -176,8 +173,8 @@ export function StepPolygonManual({ formData, onChange, onNext, onBack }: StepPo
         <div className="bg-white border border-gray-200 rounded-xl p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h4 className="font-semibold text-gray-900">{selectedPolygon.name}</h4>
-              <p className="text-sm text-gray-500">{selectedPolygon.address}</p>
+              <h4 className="font-semibold text-gray-900">{selectedPolygon.polygonName}</h4>
+              <p className="text-sm text-gray-500">{selectedPolygon.polygonAddress}</p>
             </div>
             {isCalculating && (
               <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>

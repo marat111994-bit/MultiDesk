@@ -68,25 +68,33 @@ export default function TransportCalculatorPage() {
     setError(null);
 
     try {
+      const requestBody = {
+        pickupCoords: formData.pickup.coords,
+        dropoffCoords: formData.dropoff?.coords,
+        volume: formData.cargo.volume,
+        unit: formData.cargo.unit,
+        compaction: formData.cargo.compaction,
+      };
+
+      console.log('handleCalculateTransport: sending body', JSON.stringify(requestBody, null, 2));
+
       const response = await fetch('/api/calculator/calculate-transport', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          pickupCoords: formData.pickup.coords,
-          dropoffCoords: formData.dropoff?.coords,
-          volume: formData.cargo.volume,
-          unit: formData.cargo.unit,
-          compaction: formData.cargo.compaction,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('API error response:', errorData);
         throw new Error('Ошибка расчёта стоимости');
       }
 
       const result: TransportCalculation = await response.json();
+
+      console.log('handleCalculateTransport: received result', result);
 
       // Сохраняем результат в formData
       setFormData((prev) => ({
@@ -121,14 +129,33 @@ export default function TransportCalculatorPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contact: formData.contact,
-          company: formData.company,
-          cargo: formData.cargo,
-          pickup: formData.pickup,
-          dropoff: formData.dropoff,
-          result: formData.result,
-          totalPrice: formData.result?.totalPrice || 0,
           serviceType: 'transport',
+          // Контакты
+          contactName: formData.contact.name,
+          contactPhone: formData.contact.phone,
+          contactEmail: formData.contact.email,
+          // Компания
+          companyName: formData.company.name,
+          companyInn: formData.company.inn,
+          // Груз
+          cargoName: formData.cargo.name,
+          cargoCode: formData.cargo.code,
+          volume: formData.cargo.volume,
+          unit: formData.cargo.unit,
+          compaction: formData.cargo.compaction,
+          // Погрузка
+          pickupAddress: formData.pickup.address,
+          pickupCoords: formData.pickup.coords,
+          pickupMode: formData.pickup.mode,
+          // Выгрузка
+          dropoffAddress: formData.dropoff?.address,
+          dropoffCoords: formData.dropoff?.coords,
+          dropoffMode: formData.dropoff?.mode,
+          // Результат расчёта
+          distanceKm: formData.result?.distanceKm,
+          transportTariff: formData.result?.transportTariff,
+          transportPrice: formData.result?.transportPrice,
+          totalPrice: formData.result?.totalPrice || 0,
         }),
       });
 
