@@ -13,10 +13,17 @@
     "db:seed": "npx prisma db seed",
     "images:placeholders": "npx tsx scripts/create-placeholder-images.ts",
     "import:calculator": "npx tsx scripts/import-calculator-data.ts ./data",
-"import:cargo": "npx tsx scripts/import-cargo-items.ts",
+    "import:cargo": "npx tsx scripts/import-cargo-items.ts",
     "logs": "powershell -Command \"Get-Content logs/app.log -Wait -Tail 50\"",
     "logs:errors": "powershell -Command \"Select-String -Pattern 'ERROR' logs/app.log | Select-Object -Last 50\"",
-    "logs:clear": "powershell -Command \"Clear-Content logs/app.log\""
+    "logs:clear": "powershell -Command \"Clear-Content logs/app.log\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:api": "vitest run tests/api",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "_note": "Для генерации PDF коммерческих предложений установите: npm install puppeteer-core",
   "prisma": {
@@ -53,18 +60,25 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.1.4",
+    "@vitest/ui": "1.6.0",
     "csv-parse": "^6.1.0",
     "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
+    "jsdom": "^28.1.0",
+    "playwright": "^1.58.2",
     "prisma": "^5.22.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "1.6.0"
   }
 }

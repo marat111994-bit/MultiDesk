@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,231 +7,186 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-// ==================== АВТОРИЗАЦИЯ ====================
-
 model User {
   id           String        @id @default(cuid())
   email        String        @unique
-  password     String // bcrypt hash
+  password     String
   name         String
-  role         String        @default("admin") // admin, editor
+  role         String        @default("admin")
   createdAt    DateTime      @default(now())
   activityLogs ActivityLog[]
 }
 
-// ==================== УСЛУГИ ====================
-
 model Service {
-  id               String  @id @default(cuid())
-  slug             String  @unique
+  id               String        @id @default(cuid())
+  slug             String        @unique
   title            String
   shortTitle       String
-  description      String // Полное описание (HTML из TipTap)
+  description      String
   shortDescription String
   heroImage        String?
   heroImageAlt     String?
-  topBadge         String? // Верхний бейдж: "Собственный автопарк • 120+ единиц"
-  badges           String // JSON array: ["Лицензия", "от 350₽"]
-  trustNumbers     String? // JSON array: [{ value: 2500, suffix: "м³/мес", label: "Вывозим", icon: "truck" }]
-  order            Int     @default(0) // Порядок сортировки
-  isActive         Boolean @default(true)
-
-  // SEO
-  seoTitle       String?
-  seoDescription String?
-  seoH1          String?
-  seoKeywords    String? // JSON array
-  ogImage        String?
-
-  // Связи
-  subcategories Subcategory[]
-  pricing       PriceRow[]
-  faqItems      FaqItem[]
-  advantages    Advantage[]
-  cases         Case[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  topBadge         String?
+  badges           String
+  trustNumbers     String?
+  order            Int           @default(0)
+  isActive         Boolean       @default(true)
+  seoTitle         String?
+  seoDescription   String?
+  seoH1            String?
+  seoKeywords      String?
+  ogImage          String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  advantages       Advantage[]
+  cases            Case[]
+  faqItems         FaqItem[]
+  pricing          PriceRow[]
+  subcategories    Subcategory[]
 }
 
 model Subcategory {
-  id               String  @id @default(cuid())
-  slug             String  @unique
+  id               String      @id @default(cuid())
+  slug             String      @unique
   title            String
   shortTitle       String
-  description      String // HTML
+  description      String
   shortDescription String
   heroImage        String?
   heroImageAlt     String?
-  topBadge         String? // Верхний бейдж
-  badges           String // JSON array
-  trustNumbers     String? // JSON array: [{ value: 2500, suffix: "м³/мес", label: "Вывозим", icon: "truck" }]
-  order            Int     @default(0)
-  isActive         Boolean @default(true)
-
-  // SEO
-  seoTitle       String?
-  seoDescription String?
-  seoH1          String?
-  seoKeywords    String?
-  ogImage        String?
-
-  // Родительская услуга
-  serviceId String
-  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-
-  // ФККО
-  fkkoItems  FkkoRow[]
-  pricing    PriceRow[]
-  faqItems   FaqItem[]
-  advantages Advantage[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  topBadge         String?
+  badges           String
+  trustNumbers     String?
+  order            Int         @default(0)
+  isActive         Boolean     @default(true)
+  seoTitle         String?
+  seoDescription   String?
+  seoH1            String?
+  seoKeywords      String?
+  ogImage          String?
+  serviceId        String
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  advantages       Advantage[]
+  faqItems         FaqItem[]
+  fkkoItems        FkkoRow[]
+  pricing          PriceRow[]
+  service          Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
 
-// ==================== ФККО ====================
-
 model FkkoRow {
-  id          String  @id @default(cuid())
-  code        String // "81112311394"
-  name        String // Наименование отхода
-  hazardClass Int // 1-5
-  description String?
-  order       Int     @default(0)
-
+  id            String      @id @default(cuid())
+  code          String
+  name          String
+  hazardClass   Int
+  description   String?
+  order         Int         @default(0)
   subcategoryId String
   subcategory   Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
 }
 
-// ==================== ЦЕНЫ ====================
-
 model PriceRow {
-  id          String @id @default(cuid())
-  serviceName String // "Вывоз чистого грунта"
-  unit        String // "м³"
-  price       String // "от 350 ₽"
-  order       Int    @default(0)
-
+  id            String       @id @default(cuid())
+  serviceName   String
+  unit          String
+  price         String
+  order         Int          @default(0)
   serviceId     String?
-  service       Service?     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   subcategoryId String?
   subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+  service       Service?     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
-
-// ==================== FAQ ====================
 
 model FaqItem {
-  id       String @id @default(cuid())
-  question String
-  answer   String // HTML (может содержать ссылки)
-  order    Int    @default(0)
-
+  id            String       @id @default(cuid())
+  question      String
+  answer        String
+  order         Int          @default(0)
   serviceId     String?
-  service       Service?     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   subcategoryId String?
+  pageKey       String?
   subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
-  pageKey       String? // "home", "calculator" — для FAQ не привязанных к услугам
+  service       Service?     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
-
-// ==================== ПРЕИМУЩЕСТВА ====================
 
 model Advantage {
-  id          String  @id @default(cuid())
-  title       String
-  description String
-  icon        String? // Имя иконки или SVG
-  order       Int     @default(0)
-
+  id            String       @id @default(cuid())
+  title         String
+  description   String
+  icon          String?
+  order         Int          @default(0)
   serviceId     String?
-  service       Service?     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   subcategoryId String?
+  pageKey       String?
   subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
-  pageKey       String? // "home" — для общих преимуществ
+  service       Service?     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
 
-// ==================== БЛОГ ====================
-
 model BlogPost {
-  id            String    @id @default(cuid())
-  slug          String    @unique
-  title         String
-  description   String // Краткое описание
-  content       String // HTML из TipTap
-  coverImage    String?
-  coverImageAlt String?
-  author        String    @default("DanMax")
-  readingTime   Int? // Минуты
-  tags          String // JSON array: ["ФККО", "грунт"]
-  isPublished   Boolean   @default(false)
-  publishedAt   DateTime?
-
-  // SEO
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  title          String
+  description    String
+  content        String
+  coverImage     String?
+  coverImageAlt  String?
+  author         String    @default("DanMax")
+  readingTime    Int?
+  tags           String
+  isPublished    Boolean   @default(false)
+  publishedAt    DateTime?
   seoTitle       String?
   seoDescription String?
   ogImage        String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
-
-// ==================== КЕЙСЫ ====================
 
 model Case {
-  id          String  @id @default(cuid())
-  title       String // "ЖК Лесная поляна — вывоз грунта"
+  id          String   @id @default(cuid())
+  title       String
   image       String?
   imageAlt    String?
-  volume      String? // "12 000 м³"
-  duration    String? // "14 дней"
-  description String? // Подробности
-  order       Int     @default(0)
-  isActive    Boolean @default(true)
-
-  serviceId String?
-  service   Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
+  volume      String?
+  duration    String?
+  description String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  serviceId   String?
+  createdAt   DateTime @default(now())
+  service     Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
-
-// ==================== КЛИЕНТЫ ====================
 
 model Client {
   id       String  @id @default(cuid())
   name     String
-  logo     String? // Путь к файлу
+  logo     String?
   website  String?
   order    Int     @default(0)
   isActive Boolean @default(true)
 }
 
-// ==================== НАСТРОЙКИ ====================
-
 model SiteSetting {
   id    String @id @default(cuid())
   key   String @unique
   value String
-  label String // Человекочитаемое название для админки
-  group String // "contacts", "social", "company", "promo"
+  label String
+  group String
   order Int    @default(0)
 }
 
-// ==================== ГЛАВНАЯ СТРАНИЦА ====================
-
 model HomePage {
   id            String   @id @default(cuid())
-  heroTitle     String // Заголовок Hero секции
-  heroSubtitle  String // Подзаголовок Hero секции
-  heroImage     String? // Изображение Hero
+  heroTitle     String
+  heroSubtitle  String
+  heroImage     String?
   heroImageAlt  String?
-  heroBadges    String // JSON array: ["Лицензия 1–5 класс", "от 350 ₽/м³"]
-  whyUsImage    String? // Изображение для "Почему выбирают нас"
+  heroBadges    String
+  whyUsImage    String?
   whyUsImageAlt String?
   isActive      Boolean  @default(true)
   updatedAt     DateTime @updatedAt
 }
-
-// ==================== ЗАЯВКИ С САЙТА ====================
 
 model FormSubmission {
   id          String   @id @default(cuid())
@@ -242,66 +194,57 @@ model FormSubmission {
   phone       String
   serviceType String?
   comment     String?
-  source      String? // URL страницы откуда отправлена
+  source      String?
   isRead      Boolean  @default(false)
   isArchived  Boolean  @default(false)
   createdAt   DateTime @default(now())
 }
 
-// ==================== МЕДИА ====================
-
 model MediaFile {
   id           String   @id @default(cuid())
-  filename     String // Оригинальное имя
-  filepath     String // Путь на сервере
-  url          String // URL для <img src> (original)
-  thumbnailUrl String? // URL thumbnail (300px)
-  mediumUrl    String? // URL medium (800px)
+  filename     String
+  filepath     String
+  url          String
+  thumbnailUrl String?
+  mediumUrl    String?
   mimetype     String
-  size         Int // Байты
+  size         Int
   width        Int?
   height       Int?
   alt          String?
-  folder       String   @default("general") // hero, why-us, cases, blog, clients, general
+  folder       String   @default("general")
   createdAt    DateTime @default(now())
 }
-
-// ==================== ЛОГИРОВАНИЕ ====================
 
 model ActivityLog {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  action    String // "created", "updated", "deleted"
-  entity    String // "service", "blog", "case", etc.
+  action    String
+  entity    String
   entityId  String?
-  details   String? // JSON с деталями
+  details   String?
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// ==================== КАЛЬКУЛЯТОР ГРУЗОПЕРЕВОЗОК ====================
-
-// 1. Категории грузов
 model CargoCategory {
   id           String      @id @default(cuid())
-  categoryCode String      @unique // "OSSG", "NO_OSSG", "INERT", "SNOW"
+  categoryCode String      @unique
   name         String
   cargoItems   CargoItem[]
 }
 
-// 2. Номенклатура грузов (1000+ записей)
 model CargoItem {
-  id           String        @id @default(cuid())
-  itemCode     String        @unique
-  categoryCode String
-  itemName     String
-  fkkoCode     String?       @unique
-  hazardClass  Int?
-  category     CargoCategory @relation(fields: [categoryCode], references: [categoryCode], onDelete: Cascade)
+  id                 String              @id @default(cuid())
+  itemCode           String              @unique
+  categoryCode       String
+  itemName           String
+  fkkoCode           String?             @unique
+  hazardClass        Int?
+  category           CargoCategory       @relation(fields: [categoryCode], references: [categoryCode], onDelete: Cascade)
   utilizationTariffs UtilizationTariff[]
 }
 
-// 3. Матрица тарифов перевозки (1 запись = 1 км)
 model TransportTariff {
   id                 Int      @id @default(autoincrement())
   distanceKm         Int      @unique
@@ -322,9 +265,8 @@ model TransportTariff {
   createdAt          DateTime @default(now())
 }
 
-// 4. Конфигурация тарифов (singleton, id всегда 1)
 model TransportTariffConfig {
-  id            Int      @id
+  id            Int      @id @default(autoincrement())
   startKm       Float
   startTariff   Float
   endKm         Float
@@ -346,10 +288,9 @@ model TransportTariffConfig {
   updatedAt     DateTime @updatedAt
 }
 
-// 5. Полигоны утилизации (720 записей из CSV)
 model Polygon {
   id                  String              @id @default(cuid())
-  polygonId           String              @unique // ID из CSV
+  polygonId           String              @unique
   seqNo               Int?
   receiverName        String
   receiverInn         String?
@@ -359,33 +300,31 @@ model Polygon {
   phone               String?
   email               String?
   kipNumber           String?
-  fkkoCodes           String? // Список FKKO через ";"
+  fkkoCodes           String?
   isActive            Boolean             @default(true)
-  utilizationTariffs  UtilizationTariff[]
-  calculations        Calculation[]
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
+  calculations        Calculation[]
+  utilizationTariffs  UtilizationTariff[]
 }
 
-// 6. Тарифы утилизации (4630 записей)
 model UtilizationTariff {
-  id         String  @id @default(cuid())
+  id         String    @id @default(cuid())
   fkkoCode   String
   polygonId  String
   tariffRubT Float
-  polygon    Polygon @relation(fields: [polygonId], references: [polygonId], onDelete: Cascade)
-  cargoItem  CargoItem? @relation(fields: [fkkoCode], references: [fkkoCode])
+  cargoItem  CargoItem @relation(fields: [fkkoCode], references: [fkkoCode])
+  polygon    Polygon   @relation(fields: [polygonId], references: [polygonId], onDelete: Cascade)
 
   @@unique([fkkoCode, polygonId])
   @@index([fkkoCode, polygonId])
 }
 
-// 7. Расчёт (сохранённый или черновик)
 model Calculation {
   id                   String               @id @default(cuid())
-  calculationId        String               @unique // Формат "CD-ДДММГГ-NNN"
-  serviceType          String // "transport" | "transport_disposal_auto" | "transport_disposal_manual"
-  status               String               @default("draft") // "draft" | "sent" | "completed" | "cancelled"
+  calculationId        String               @unique
+  serviceType          String
+  status               String               @default("draft")
   contactName          String?
   contactPhone         String?
   contactEmail         String?
@@ -409,7 +348,6 @@ model Calculation {
   polygonName          String?
   polygonAddress       String?
   polygonCoords        String?
-  polygon              Polygon?             @relation(fields: [polygonId], references: [polygonId], onDelete: SetNull)
   distanceKm           Float?
   transportTariff      Float?
   transportTariffPerKm Float?
@@ -418,25 +356,25 @@ model Calculation {
   utilizationPrice     Float?
   totalPrice           Float?
   comment              String?
-  calculationData      String? // Полный снапшот расчёта (JSON string)
-  pdfData              String? // Данные для генерации PDF (JSON string)
-  pdfPath              String? // Путь к сгенерированному PDF
-  comments             CalculationComment[]
+  calculationData      String?
+  pdfData              String?
+  pdfPath              String?
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
+  polygon              Polygon?             @relation(fields: [polygonId], references: [polygonId])
+  comments             CalculationComment[]
 
   @@index([serviceType])
   @@index([status])
   @@index([createdAt])
 }
 
-// 8. История комментариев к расчёту
 model CalculationComment {
   id            String      @id @default(cuid())
   calculationId String
-  calculation   Calculation @relation(fields: [calculationId], references: [id], onDelete: Cascade)
-  authorType    String // "client" | "dispatcher"
+  authorType    String
   authorName    String?
   comment       String
   createdAt     DateTime    @default(now())
+  calculation   Calculation @relation(fields: [calculationId], references: [id], onDelete: Cascade)
 }
