@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { AddressData, AddressSuggestion } from '@/lib/types/calculator';
-import { debounce } from '@/lib/utils/calculator';
+import { debounce, validateCoords } from '@/lib/utils/calculator';
 import { formatMode } from '@/lib/utils/calculator';
 
 interface StepDropoffProps {
@@ -13,10 +13,11 @@ interface StepDropoffProps {
 }
 
 export function StepDropoff({ formData, onChange, onNext, onBack }: StepDropoffProps) {
-  const [errors, setErrors] = useState<{ address?: string }>({});
+  const [errors, setErrors] = useState<{ address?: string; coords?: string }>({});
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [coordsError, setCoordsError] = useState<string>('');
 
   const fetchSuggestions = useCallback(
     debounce(async (query: string) => {
@@ -41,6 +42,36 @@ export function StepDropoff({ formData, onChange, onNext, onBack }: StepDropoffP
     []
   );
 
+  const reverseGeocode = useCallback(
+    debounce(async (coords: string) => {
+      const validation = validateCoords(coords);
+      if (!validation.valid) {
+        setCoordsError('Неверный формат координат');
+        return;
+      }
+
+      setCoordsError('');
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/geocode/reverse?lat=${validation.lat}&lon=${validation.lon}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.address) {
+            onChange('dropoff.address', data.address);
+          }
+        } else if (response.status === 404) {
+          setCoordsError('Адрес по координатам не найден');
+        }
+      } catch (error) {
+        console.error('Error reverse geocoding:', error);
+        setCoordsError('Ошибка геокодирования');
+      } finally {
+        setIsLoading(false);
+      }
+    }, 800),
+    [onChange]
+  );
+
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     onChange('dropoff.address', value);
@@ -49,6 +80,32 @@ export function StepDropoff({ formData, onChange, onNext, onBack }: StepDropoffP
     }
     fetchSuggestions(value);
     setShowSuggestions(true);
+  };
+
+  const handleCoordsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    onChange('dropoff.coords', value);
+
+    if (value.trim()) {
+      const validation = validateCoords(value);
+      if (!validation.valid) {
+        setCoordsError('Неверный формат координат');
+      } else {
+        setCoordsError('');
+        reverseGeocode(value);
+      }
+    } else {
+      setCoordsError('');
+    }
+  };
+
+  const formatCoordsForInput = (coords: string): string => {
+    if (!coords) return '';
+    const parts = coords.split(/[\s,]+/).filter(Boolean);
+    if (parts.length === 2) {
+      return `${parts[0]}, ${parts[1]}`;
+    }
+    return coords;
   };
 
   const handleModeChange = (mode: 'day' | 'night' | '24') => {
@@ -60,7 +117,10 @@ export function StepDropoff({ formData, onChange, onNext, onBack }: StepDropoffP
 
     // Если координаты есть в подсказке — используем их
     if (suggestion.coords) {
-      onChange('dropoff.coords', suggestion.coords);
+      const formattedCoords = suggestion.coords.includes(' ')
+        ? suggestion.coords.replace(' ', ', ')
+        : suggestion.coords;
+      onChange('dropoff.coords', formattedCoords);
       setSuggestions([]);
       setShowSuggestions(false);
     } else {
@@ -71,7 +131,7 @@ export function StepDropoff({ formData, onChange, onNext, onBack }: StepDropoffP
         if (response.ok) {
           const data = await response.json();
           if (data.lat && data.lon) {
-            onChange('dropoff.coords', `${data.lat} ${data.lon}`);
+            onChange('dropoff.coords', `${data.lat}, ${data.lon}`);
           }
         } else {
           // Fallback: если геокодирование не удалось, пробуем через адрес из input
@@ -81,13 +141,13 @@ export function StepDropoff({ formData, onChange, onNext, onBack }: StepDropoffP
             if (fallbackResponse.ok) {
               const fallbackData = await fallbackResponse.json();
               if (fallbackData.lat && fallbackData.lon) {
-                onChange('dropoff.coords', `${fallbackData.lat} ${fallbackData.lon}`);
+                onChange('dropoff.coords', `${fallbackData.lat}, ${fallbackData.lon}`);
               }
             }
           }
         }
       } catch (error) {
-        console.error('[StepDropoff] Error geocoding address:', error);
+        console.error('Error geocoding address:', error);
       } finally {
         setIsLoading(false);
       }
@@ -97,14 +157,14 @@ export function StepDropoff({ formData, onChange, onNext, onBack }: StepDropoffP
   };
 
   const validate = (): boolean => {
-    const newErrors: { address?: string } = {};
+    const newErrors: { address?: string; coords?: string } = {};
 
     if (!formData.dropoff?.address.trim()) {
       newErrors.address = 'Введите адрес выгрузки';
     }
 
     if (!formData.dropoff?.coords) {
-      newErrors.address = 'Координаты не получены. Выберите адрес из подсказок и дождитесь геокодирования';
+      newErrors.coords = 'Введите координаты или выберите адрес из подсказок';
     }
 
     setErrors(newErrors);
@@ -153,6 +213,26 @@ export function StepDropoff({ formData, onChange, onNext, onBack }: StepDropoffP
               </button>
             ))}
           </div>
+        )}
+      </div>
+
+      <div>
+        <label htmlFor="dropoffCoords" className="block text-sm font-medium text-gray-700 mb-2">
+          Координаты
+        </label>
+        <input
+          type="text"
+          id="dropoffCoords"
+          value={formatCoordsForInput(formData.dropoff?.coords || '')}
+          onChange={handleCoordsChange}
+          placeholder="55.7558, 37.6173"
+          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
+            coordsError ? 'border-red-500' : 'border-gray-300'
+          }`}
+        />
+        {coordsError && <p className="mt-1 text-xs text-red-600">{coordsError}</p>}
+        {!coordsError && formData.dropoff?.coords && (
+          <p className="mt-1 text-xs text-gray-500">Широта: 54.0-57.0, Долгота: 35.0-40.0</p>
         )}
       </div>
 

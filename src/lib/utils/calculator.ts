@@ -164,3 +164,31 @@ export function formatMode(mode: 'day' | 'night' | '24'): string {
       return '24/7';
   }
 }
+
+/**
+ * Валидация координат (Москва и область с запасом)
+ * Широта: 54.0 - 57.0, Долгота: 35.0 - 40.0
+ */
+export function validateCoords(coords: string): { valid: boolean; lat?: number; lon?: number } {
+  try {
+    const parts = coords.split(',').map(s => s.trim());
+    if (parts.length !== 2) {
+      return { valid: false };
+    }
+
+    const lat = parseFloat(parts[0]);
+    const lon = parseFloat(parts[1]);
+
+    if (isNaN(lat) || isNaN(lon)) {
+      return { valid: false };
+    }
+
+    if (lat < 54.0 || lat > 57.0 || lon < 35.0 || lon > 40.0) {
+      return { valid: false };
+    }
+
+    return { valid: true, lat, lon };
+  } catch {
+    return { valid: false };
+  }
+}

@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { AddressData, AddressSuggestion } from '@/lib/types/calculator';
-import { debounce } from '@/lib/utils/calculator';
+import { debounce, validateCoords } from '@/lib/utils/calculator';
 import { formatMode } from '@/lib/utils/calculator';
 
 interface StepPickupProps {
@@ -13,10 +13,11 @@ interface StepPickupProps {
 }
 
 export function StepPickup({ formData, onChange, onNext, onBack }: StepPickupProps) {
-  const [errors, setErrors] = useState<{ address?: string }>({});
+  const [errors, setErrors] = useState<{ address?: string; coords?: string }>({});
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [coordsError, setCoordsError] = useState<string>('');
 
   const fetchSuggestions = useCallback(
     debounce(async (query: string) => {
@@ -27,16 +28,13 @@ export function StepPickup({ formData, onChange, onNext, onBack }: StepPickupPro
 
       setIsLoading(true);
       try {
-        console.log('[StepPickup] Fetching suggestions for:', query);
         const response = await fetch(`/api/address/suggest/${encodeURIComponent(query)}`);
-        console.log('[StepPickup] Response status:', response.status);
         if (response.ok) {
           const data = await response.json();
-          console.log('[StepPickup] Suggestions received:', data);
           setSuggestions(data);
         }
       } catch (error) {
-        console.error('[StepPickup] Error fetching address suggestions:', error);
+        console.error('Error fetching address suggestions:', error);
       } finally {
         setIsLoading(false);
       }
@@ -44,15 +42,70 @@ export function StepPickup({ formData, onChange, onNext, onBack }: StepPickupPro
     []
   );
 
+  const reverseGeocode = useCallback(
+    debounce(async (coords: string) => {
+      const validation = validateCoords(coords);
+      if (!validation.valid) {
+        setCoordsError('Неверный формат координат');
+        return;
+      }
+
+      setCoordsError('');
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/geocode/reverse?lat=${validation.lat}&lon=${validation.lon}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.address) {
+            onChange('pickup.address', data.address);
+          }
+        } else if (response.status === 404) {
+          setCoordsError('Адрес по координатам не найден');
+        }
+      } catch (error) {
+        console.error('Error reverse geocoding:', error);
+        setCoordsError('Ошибка геокодирования');
+      } finally {
+        setIsLoading(false);
+      }
+    }, 800),
+    [onChange]
+  );
+
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    console.log('[StepPickup] Address changed to:', value);
     onChange('pickup.address', value);
     if (value.trim()) {
       setErrors((prev) => ({ ...prev, address: undefined }));
     }
     fetchSuggestions(value);
     setShowSuggestions(true);
+  };
+
+  const handleCoordsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    onChange('pickup.coords', value);
+
+    if (value.trim()) {
+      const validation = validateCoords(value);
+      if (!validation.valid) {
+        setCoordsError('Неверный формат координат');
+      } else {
+        setCoordsError('');
+        reverseGeocode(value);
+      }
+    } else {
+      setCoordsError('');
+    }
+  };
+
+  const formatCoordsForInput = (coords: string): string => {
+    if (!coords) return '';
+    const parts = coords.split(/[\s,]+/).filter(Boolean);
+    if (parts.length === 2) {
+      return `${parts[0]}, ${parts[1]}`;
+    }
+    return coords;
   };
 
   const handleModeChange = (mode: 'day' | 'night' | '24') => {
@@ -64,7 +117,10 @@ export function StepPickup({ formData, onChange, onNext, onBack }: StepPickupPro
 
     // Если координаты есть в подсказке — используем их
     if (suggestion.coords) {
-      onChange('pickup.coords', suggestion.coords);
+      const formattedCoords = suggestion.coords.includes(' ')
+        ? suggestion.coords.replace(' ', ', ')
+        : suggestion.coords;
+      onChange('pickup.coords', formattedCoords);
       setSuggestions([]);
       setShowSuggestions(false);
     } else {
@@ -75,7 +131,7 @@ export function StepPickup({ formData, onChange, onNext, onBack }: StepPickupPro
         if (response.ok) {
           const data = await response.json();
           if (data.lat && data.lon) {
-            onChange('pickup.coords', `${data.lat} ${data.lon}`);
+            onChange('pickup.coords', `${data.lat}, ${data.lon}`);
           }
         } else {
           // Fallback: если геокодирование не удалось, пробуем через адрес из input
@@ -85,13 +141,13 @@ export function StepPickup({ formData, onChange, onNext, onBack }: StepPickupPro
             if (fallbackResponse.ok) {
               const fallbackData = await fallbackResponse.json();
               if (fallbackData.lat && fallbackData.lon) {
-                onChange('pickup.coords', `${fallbackData.lat} ${fallbackData.lon}`);
+                onChange('pickup.coords', `${fallbackData.lat}, ${fallbackData.lon}`);
               }
             }
           }
         }
       } catch (error) {
-        console.error('[StepPickup] Error geocoding address:', error);
+        console.error('Error geocoding address:', error);
       } finally {
         setIsLoading(false);
       }
@@ -101,14 +157,14 @@ export function StepPickup({ formData, onChange, onNext, onBack }: StepPickupPro
   };
 
   const validate = (): boolean => {
-    const newErrors: { address?: string } = {};
+    const newErrors: { address?: string; coords?: string } = {};
 
     if (!formData.pickup.address.trim()) {
       newErrors.address = 'Введите адрес погрузки';
     }
 
     if (!formData.pickup.coords) {
-      newErrors.address = 'Координаты не получены. Выберите адрес из подсказок и дождитесь геокодирования';
+      newErrors.coords = 'Введите координаты или выберите адрес из подсказок';
     }
 
     setErrors(newErrors);
@@ -150,19 +206,36 @@ export function StepPickup({ formData, onChange, onNext, onBack }: StepPickupPro
             {!isLoading && suggestions.length === 0 && (
               <div className="px-4 py-3 text-gray-500 text-sm">Нет подсказок</div>
             )}
-            {suggestions.map((suggestion, index) => {
-              console.log('[StepPickup] Rendering suggestion:', suggestion);
-              return (
-                <button
-                  key={index}
-                  onClick={() => selectSuggestion(suggestion)}
-                  className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
-                >
-                  {suggestion.value}
-                </button>
-              );
-            })}
+            {suggestions.map((suggestion, index) => (
+              <button
+                key={index}
+                onClick={() => selectSuggestion(suggestion)}
+                className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
+              >
+                {suggestion.value}
+              </button>
+            ))}
           </div>
+        )}
+      </div>
+
+      <div>
+        <label htmlFor="pickupCoords" className="block text-sm font-medium text-gray-700 mb-2">
+          Координаты
+        </label>
+        <input
+          type="text"
+          id="pickupCoords"
+          value={formatCoordsForInput(formData.pickup.coords)}
+          onChange={handleCoordsChange}
+          placeholder="55.7558, 37.6173"
+          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
+            coordsError ? 'border-red-500' : 'border-gray-300'
+          }`}
+        />
+        {coordsError && <p className="mt-1 text-xs text-red-600">{coordsError}</p>}
+        {!coordsError && formData.pickup.coords && (
+          <p className="mt-1 text-xs text-gray-500">Широта: 54.0-57.0, Долгота: 35.0-40.0</p>
         )}
       </div>
 

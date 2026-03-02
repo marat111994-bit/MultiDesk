@@ -17,7 +17,7 @@ export function StepReviewDisposal({
   onSubmit,
   isSubmitting = false,
 }: StepReviewDisposalProps) {
-  const { contact, company, cargo, pickup, selectedOption } = formData;
+  const { contact, cargo, pickup, selectedOption } = formData;
 
   return (
     <div className="space-y-6">
@@ -28,52 +28,6 @@ export function StepReviewDisposal({
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Контакт */}
-          <div>
-            <h4 className="text-sm font-medium text-gray-500 mb-2">Контакт</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm text-gray-400">Имя</p>
-                <p className="text-gray-900">{contact.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Телефон</p>
-                <p className="text-gray-900">{contact.phone}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Email</p>
-                <p className="text-gray-900">{contact.email}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Компания */}
-          <div className="border-t border-gray-100 pt-4">
-            <h4 className="text-sm font-medium text-gray-500 mb-2">Компания</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-400">Название</p>
-                <p className="text-gray-900">{company.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">ИНН</p>
-                <p className="text-gray-900">{company.inn || '—'}</p>
-              </div>
-              {company.kpp && (
-                <div>
-                  <p className="text-sm text-gray-400">КПП</p>
-                  <p className="text-gray-900">{company.kpp}</p>
-                </div>
-              )}
-              {company.address && (
-                <div>
-                  <p className="text-sm text-gray-400">Адрес</p>
-                  <p className="text-gray-900">{company.address}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Груз */}
           <div className="border-t border-gray-100 pt-4">
             <h4 className="text-sm font-medium text-gray-500 mb-2">Груз</h4>

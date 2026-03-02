@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ContactData } from '@/lib/types/calculator';
-import { formatPhone, cleanPhone, validateEmail } from '@/lib/utils/calculator';
+import { formatPhone, cleanPhone } from '@/lib/utils/calculator';
 
 interface StepContactProps {
   formData: { contact: ContactData };
@@ -12,7 +12,7 @@ interface StepContactProps {
 }
 
 export function StepContact({ formData, onChange, onNext, onBack }: StepContactProps) {
-  const [errors, setErrors] = useState<{ name?: string; phone?: string; email?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -26,21 +26,13 @@ export function StepContact({ formData, onChange, onNext, onBack }: StepContactP
     const value = e.target.value;
     const formatted = formatPhone(value);
     onChange('contact.phone', formatted);
-    if (formatted.length >= 18) { // +7 (XXX) XXX-XX-XX
+    if (formatted.length >= 18) {
       setErrors((prev) => ({ ...prev, phone: undefined }));
     }
   };
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    onChange('contact.email', value);
-    if (validateEmail(value)) {
-      setErrors((prev) => ({ ...prev, email: undefined }));
-    }
-  };
-
   const validate = (): boolean => {
-    const newErrors: { name?: string; phone?: string; email?: string } = {};
+    const newErrors: { name?: string; phone?: string } = {};
 
     if (!formData.contact.name.trim()) {
       newErrors.name = 'Введите имя';
@@ -49,10 +41,6 @@ export function StepContact({ formData, onChange, onNext, onBack }: StepContactP
     const clean = cleanPhone(formData.contact.phone);
     if (clean.length < 11) {
       newErrors.phone = 'Введите корректный номер телефона';
-    }
-
-    if (!validateEmail(formData.contact.email)) {
-      newErrors.email = 'Введите корректный email';
     }
 
     setErrors(newErrors);
@@ -99,23 +87,6 @@ export function StepContact({ formData, onChange, onNext, onBack }: StepContactP
           }`}
         />
         {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
-      </div>
-
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-          Email *
-        </label>
-        <input
-          type="email"
-          id="email"
-          value={formData.contact.email}
-          onChange={handleEmailChange}
-          placeholder="example@mail.ru"
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
-            errors.email ? 'border-red-500' : 'border-gray-300'
-          }`}
-        />
-        {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
       </div>
 
       <div className="flex gap-4 pt-4">

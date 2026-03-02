@@ -3,9 +3,9 @@
 export interface ContactData {
   name: string;
   phone: string;
-  email: string;
 }
 
+/** @deprecated Не используется в новой версии калькулятора */
 export interface CompanyData {
   name: string;
   inn: string;
@@ -51,7 +51,6 @@ export interface TransportResult {
 export interface FormData {
   // Общие поля
   contact: ContactData;
-  company: CompanyData;
   cargo: CargoData;
   pickup: AddressData;
   // Ветка А
@@ -62,11 +61,11 @@ export interface FormData {
   result?: TransportResult;
   // ID заявки (для шага успеха)
   applicationId?: string;
+  calculationId?: string;
 }
 
 export const createInitialFormData = (): FormData => ({
-  contact: { name: '', phone: '', email: '' },
-  company: { name: '', inn: '', kpp: '', address: '' },
+  contact: { name: '', phone: '' },
   cargo: { name: '', code: '', fkkoCode: '', volume: 0, unit: 't', compaction: 1 },
   pickup: { address: '', coords: '', mode: '24' },
 });
