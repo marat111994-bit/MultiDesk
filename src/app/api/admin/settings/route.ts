@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(grouped)
   } catch (error) {
-    console.error("Error fetching settings:", error)
+    logger.error("Error fetching settings:", error)
     return NextResponse.json(
       { error: "Failed to fetch settings" },
       { status: 500 }
@@ -67,7 +68,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error updating settings:", error)
+    logger.error("Error updating settings:", error)
     return NextResponse.json(
       { error: "Failed to update settings" },
       { status: 500 }

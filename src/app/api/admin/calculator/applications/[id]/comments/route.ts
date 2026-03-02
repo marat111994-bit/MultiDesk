@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/admin/calculator/applications/[id]/comments
@@ -42,7 +43,7 @@ export async function GET(
 
     return NextResponse.json(comments);
   } catch (error) {
-    console.error('Error fetching comments:', error);
+    logger.error('Error fetching comments:', error);
     return NextResponse.json(
       { error: 'Ошибка при получении комментариев' },
       { status: 500 }
@@ -106,7 +107,7 @@ export async function POST(
       comment,
     });
   } catch (error) {
-    console.error('Error creating comment:', error);
+    logger.error('Error creating comment:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

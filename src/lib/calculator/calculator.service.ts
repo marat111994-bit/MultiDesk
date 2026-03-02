@@ -69,7 +69,7 @@ function resolveVolumes(volume: number, unit: 't' | 'm3', compaction: number): V
 }
 
 /**
- * Парсит координаты из строки "lat,lon" или JSON.
+ * Парсит координаты из строки "lat lon" (пробел), "lat,lon" (запятая) или JSON.
  */
 function parseCoords(coordsString: string | null): { lat: number; lon: number } | null {
   if (!coordsString) return null;
@@ -81,10 +81,15 @@ function parseCoords(coordsString: string | null): { lat: number; lon: number } 
       return { lat: parsed.lat, lon: parsed.lon };
     }
   } catch {
-    // Пробуем как "lat,lon"
-    const parts = coordsString.split(',').map((s) => parseFloat(s.trim()));
-    if (parts.length === 2 && !Number.isNaN(parts[0]) && !Number.isNaN(parts[1])) {
-      return { lat: parts[0], lon: parts[1] };
+    // Пробуем как "lat lon" (пробел) или "lat,lon" (запятая)
+    let parts: string[];
+    if (coordsString.includes(',')) {
+      parts = coordsString.split(',').map((s) => s.trim());
+    } else {
+      parts = coordsString.split(' ').map((s) => s.trim());
+    }
+    if (parts.length === 2 && !Number.isNaN(parseFloat(parts[0])) && !Number.isNaN(parseFloat(parts[1]))) {
+      return { lat: parseFloat(parts[0]), lon: parseFloat(parts[1]) };
     }
   }
 
@@ -447,77 +452,80 @@ export async function calculateDisposalAuto(input: {
 }): Promise<DisposalCalculationResult> {
   const { pickupCoords, fkkoCode, volume, unit, compaction } = input;
 
-  // 1. Находим все полигоны с тарифами для данного FKCO
+  // 1. Находим все тарифы для данного FKCO
   const utilizationTariffs = await prisma.utilizationTariff.findMany({
     where: { fkkoCode },
-    include: {
-      polygon: {
-        select: {
-          id: true,
-          receiverName: true,
-          facilityAddress: true,
-          facilityCoordinates: true,
-          isActive: true,
-        },
-      },
-    },
   });
 
-  // Фильтруем активные полигоны
-  const activeTariffs = utilizationTariffs.filter((ut) => ut.polygon.isActive);
-
-  if (activeTariffs.length === 0) {
+  if (utilizationTariffs.length === 0) {
     return { options: [], volumeT: 0, volumeM3: 0 };
   }
 
-  // 2. Для каждого полигона считаем расстояние по Haversine
-  const polygonsWithDistance: Array<{
-    polygon: {
-      id: string;
-      receiverName: string;
-      facilityAddress: string;
-      facilityCoordinates: string | null;
-    };
+  // 2. Получаем все активные полигоны одним запросом
+  const polygonIds = utilizationTariffs.map((t) => t.polygonId);
+  const polygons = await prisma.polygon.findMany({
+    where: {
+      polygonId: { in: polygonIds },
+      isActive: true,
+    },
+  });
+
+  // 3. Создаём Map для быстрого доступа
+  const polygonMap = new Map(
+    polygons.map((p) => [p.polygonId, p])
+  );
+
+  // 4. Для каждого тарифа с активным полигоном — считаем Haversine
+  const candidates: Array<{
+    polygonId: string;
+    receiverName: string;
+    facilityAddress: string;
+    facilityCoordinates: string | null;
     utilizationTariffRubT: number;
-    haversineDistance: number;
+    haversineDist: number;
   }> = [];
 
-  for (const ut of activeTariffs) {
-    const coords = parseCoords(ut.polygon.facilityCoordinates);
+  for (const tariff of utilizationTariffs) {
+    const polygon = polygonMap.get(tariff.polygonId);
+    if (!polygon) continue;
+
+    const coords = parseCoords(polygon.facilityCoordinates);
     if (!coords) continue;
 
-    const hDistance = haversineDistance(
+    const hDist = haversineDistance(
       pickupCoords.lat,
       pickupCoords.lon,
       coords.lat,
       coords.lon
     );
 
-    polygonsWithDistance.push({
-      polygon: ut.polygon,
-      utilizationTariffRubT: ut.tariffRubT,
-      haversineDistance: hDistance,
+    candidates.push({
+      polygonId: polygon.polygonId,
+      receiverName: polygon.receiverName,
+      facilityAddress: polygon.facilityAddress,
+      facilityCoordinates: polygon.facilityCoordinates,
+      utilizationTariffRubT: tariff.tariffRubT,
+      haversineDist: hDist,
     });
   }
 
-  // 3. Сортируем по Haversine, берём топ-20
-  polygonsWithDistance.sort((a, b) => a.haversineDistance - b.haversineDistance);
-  const top20 = polygonsWithDistance.slice(0, 20);
+  // 5. Топ-20 по Haversine (ближайшие)
+  const top20 = candidates
+    .sort((a, b) => a.haversineDist - b.haversineDist)
+    .slice(0, 20);
 
-  // 4. Для топ-20 запрашиваем реальное расстояние через OpenRouteService
-  const polygonsWithRoadDistance: Array<{
-    polygon: {
-      id: string;
-      receiverName: string;
-      facilityAddress: string;
-      facilityCoordinates: string | null;
-    };
+  // 6. Для топ-20 получаем реальное расстояние через ORS
+  const withRealDistance: Array<{
+    polygonId: string;
+    receiverName: string;
+    facilityAddress: string;
+    facilityCoordinates: string | null;
     utilizationTariffRubT: number;
     distanceKm: number;
   }> = [];
 
-  for (const item of top20) {
-    const coords = parseCoords(item.polygon.facilityCoordinates);
+  for (const candidate of top20) {
+    const coords = parseCoords(candidate.facilityCoordinates);
     if (!coords) continue;
 
     const roadDistance = await getRoadDistance(
@@ -527,50 +535,83 @@ export async function calculateDisposalAuto(input: {
       coords.lon
     );
 
-    polygonsWithRoadDistance.push({
-      polygon: item.polygon,
-      utilizationTariffRubT: item.utilizationTariffRubT,
+    withRealDistance.push({
+      polygonId: candidate.polygonId,
+      receiverName: candidate.receiverName,
+      facilityAddress: candidate.facilityAddress,
+      facilityCoordinates: candidate.facilityCoordinates,
+      utilizationTariffRubT: candidate.utilizationTariffRubT,
       distanceKm: roadDistance,
     });
   }
 
-  // 5. Получаем тариф перевозки (усреднённый или по максимальному расстоянию)
-  const maxDistance = Math.max(...polygonsWithRoadDistance.map((p) => p.distanceKm), 1);
-  const tariffData = await getTariffByDistance(maxDistance);
+  // 7. Для каждого полигона — индивидуальный тариф перевозки и расчёт стоимости
+  const volumes = resolveVolumes(volume, unit, compaction);
+  const { volumeT, volumeM3 } = volumes;
 
-  if (!tariffData) {
-    return { options: [], volumeT: 0, volumeM3: 0 };
-  }
-
-  // 6. Рассчитываем стоимость для каждого полигона
   const options: DisposalOption[] = [];
 
-  for (const item of polygonsWithRoadDistance) {
-    const option = calculateDisposalForPolygon(
-      item.polygon,
-      item.utilizationTariffRubT,
-      pickupCoords,
-      item.distanceKm,
-      volume,
-      unit,
-      compaction,
-      { baseTariffT: tariffData.baseTariffT, baseTariffM3: tariffData.baseTariffM3 }
-    );
+  for (const item of withRealDistance) {
+    // Получаем тариф перевозки для ЭТОГО расстояния
+    const tariffData = await getTariffByDistance(item.distanceKm);
+    if (!tariffData) continue;
 
-    if (option) {
-      options.push(option);
+    const isHeavy = compaction >= 1;
+    let scenario: number;
+    let transportTariff: number;
+    let transportPrice: number;
+    let utilizationPrice: number;
+
+    if (unit === 't' && isHeavy) {
+      // СЦЕНАРИЙ 1: Тонны, K ≥ 1 (тяжёлый груз)
+      scenario = 1;
+      transportTariff = tariffData.baseTariffT;
+      transportPrice = tariffData.baseTariffT * volumeT;
+      utilizationPrice = item.utilizationTariffRubT * volumeT;
+    } else if (unit === 't' && !isHeavy) {
+      // СЦЕНАРИЙ 2: Тонны, K < 1 (лёгкий груз в тоннах)
+      scenario = 2;
+      transportTariff = tariffData.baseTariffM3;
+      transportPrice = tariffData.baseTariffM3 * volumeM3;
+      utilizationPrice = item.utilizationTariffRubT * volumeT;
+    } else if (unit === 'm3' && isHeavy) {
+      // СЦЕНАРИЙ 3: Кубы, K ≥ 1 (тяжёлый груз в кубах)
+      scenario = 3;
+      transportTariff = tariffData.baseTariffT;
+      transportPrice = tariffData.baseTariffT * volumeT;
+      utilizationPrice = (item.utilizationTariffRubT * compaction) * volumeM3;
+    } else {
+      // СЦЕНАРИЙ 4: Кубы, K < 1 (лёгкий груз в кубах)
+      scenario = 4;
+      transportTariff = tariffData.baseTariffM3;
+      transportPrice = tariffData.baseTariffM3 * volumeM3;
+      utilizationPrice = item.utilizationTariffRubT * volumeM3;
     }
+
+    options.push({
+      polygonId: item.polygonId,
+      polygonName: item.receiverName,
+      polygonAddress: item.facilityAddress,
+      polygonCoords: item.facilityCoordinates,
+      distanceKm: item.distanceKm,
+      transportTariff,
+      transportPrice,
+      utilizationTariff: item.utilizationTariffRubT,
+      utilizationPrice,
+      totalPrice: transportPrice + utilizationPrice,
+      volumeT,
+      volumeM3,
+      scenario,
+    });
   }
 
-  // 7. Сортируем по totalPrice, возвращаем топ-5
+  // 8. Сортируем по totalPrice, возвращаем топ-5
   options.sort((a, b) => a.totalPrice - b.totalPrice);
-
-  const volumes = resolveVolumes(volume, unit, compaction);
 
   return {
     options: options.slice(0, 5),
-    volumeT: volumes.volumeT,
-    volumeM3: volumes.volumeM3,
+    volumeT,
+    volumeM3,
   };
 }
 

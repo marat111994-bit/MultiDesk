@@ -5,6 +5,7 @@ import sharp from "sharp"
 import { writeFile, mkdir, rm } from "fs/promises"
 import { join } from "path"
 import { transliterate } from "transliteration"
+import { logger } from "@/lib/logger"
 
 // Разрешённые форматы
 const ALLOWED_MIMETYPES = ["image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/gif"]
@@ -88,7 +89,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("Error fetching media:", error)
+    logger.error("Error fetching media:", error)
     return NextResponse.json(
       { error: "Failed to fetch media files" },
       { status: 500 }
@@ -224,7 +225,7 @@ export async function POST(request: NextRequest) {
       filename: mediaFile.filename,
     })
   } catch (error) {
-    console.error("Upload error:", error)
+    logger.error("Upload error:", error)
     return NextResponse.json(
       { error: "Ошибка загрузки. Попробуйте ещё раз." },
       { status: 500 }

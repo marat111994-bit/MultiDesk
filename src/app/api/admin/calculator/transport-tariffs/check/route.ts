@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/admin/calculator/transport-tariffs/check
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {
-    console.error('Error checking transport tariffs:', error);
+    logger.error('Error checking transport tariffs:', error);
     return NextResponse.json(
       { error: 'Ошибка при проверке данных' },
       { status: 500 }

@@ -1,18 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { calculateDisposalSingle } from '@/lib/calculator/calculator.service';
+import { logger } from '@/lib/logger';
 
 const disposalSingleSchema = z.object({
-  pickupCoords: z.object({
-    lat: z.number(),
-    lon: z.number(),
-  }),
+  pickupCoords: z.string().or(z.object({ lat: z.number(), lon: z.number() })),
   fkkoCode: z.string().regex(/^\d{11}$/, 'fkkoCode должен быть строкой из 11 цифр'),
   volume: z.number().positive('volume должен быть больше 0'),
   unit: z.enum(['t', 'm3']),
   compaction: z.number().positive(),
   polygonId: z.string(),
 });
+
+function parseCoords(coords: string | { lat: number; lon: number }): { lat: number; lon: number } {
+  if (typeof coords === 'string') {
+    const [lat, lon] = coords.split(',').map(Number);
+    if (isNaN(lat) || isNaN(lon)) {
+      throw new Error('Неверный формат координат');
+    }
+    return { lat, lon };
+  }
+  return coords;
+}
 
 /**
  * POST /api/calculator/calculate-disposal-single
@@ -24,8 +33,10 @@ export async function POST(request: NextRequest) {
 
     const validatedData = disposalSingleSchema.parse(body);
 
+    const pickupCoords = parseCoords(validatedData.pickupCoords);
+
     const result = await calculateDisposalSingle({
-      pickupCoords: validatedData.pickupCoords,
+      pickupCoords,
       fkkoCode: validatedData.fkkoCode,
       volume: validatedData.volume,
       unit: validatedData.unit,
@@ -42,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error calculating disposal single:', error);
+    logger.error('calculate-disposal-single: error', { message: error instanceof Error ? error.message : String(error) });
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

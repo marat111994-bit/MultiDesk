@@ -308,6 +308,106 @@ async function main() {
   }
 
   console.log('✅ Seed-скрипт завершён успешно!')
+
+  // Создаём тарифы и полигоны
+  await seedTariffsAndPolygons()
+}
+
+// Создаём тарифы и полигоны
+async function seedTariffsAndPolygons() {
+  console.log('📊 Создание тарифов перевозки и полигонов...')
+  
+  // Очищаем существующие данные
+  await prisma.transportTariff.deleteMany()
+  await prisma.polygon.deleteMany()
+  await prisma.transportTariffConfig.deleteMany()
+
+  // Создаём тарифы для 1-500 км
+  for (let km = 1; km <= 500; km++) {
+    const baseTariffT = Math.max(50, 200 - km * 0.3)
+    const baseTariffTkm = baseTariffT * 0.1
+    const baseTariffM3 = baseTariffT * 0.8
+    const baseTariffM3km = baseTariffM3 * 0.1
+
+    await prisma.transportTariff.create({
+      data: {
+        distanceKm: km,
+        baseTariffT: Math.round(baseTariffT * 100) / 100,
+        baseTariffTkm: Math.round(baseTariffTkm * 100) / 100,
+        baseTariffM3: Math.round(baseTariffM3 * 100) / 100,
+        baseTariffM3km: Math.round(baseTariffM3km * 100) / 100,
+        outgoingTariffT: Math.round(baseTariffT * 1.2 * 100) / 100,
+        outgoingTariffTkm: Math.round(baseTariffTkm * 1.2 * 100) / 100,
+        outgoingTariffM3: Math.round(baseTariffM3 * 1.2 * 100) / 100,
+        outgoingTariffM3km: Math.round(baseTariffM3km * 1.2 * 100) / 100,
+        marginT: Math.round(baseTariffT * 0.3 * 100) / 100,
+        marginTkm: Math.round(baseTariffTkm * 0.3 * 100) / 100,
+        marginM3: Math.round(baseTariffM3 * 0.3 * 100) / 100,
+        marginM3km: Math.round(baseTariffM3km * 0.3 * 100) / 100,
+        volumeCoeff: 1.4,
+        marginPercent: 20,
+      },
+    })
+  }
+  console.log('✅ Создано 500 тарифов перевозки')
+
+  // Создаём тестовые полигоны
+  const polygons = [
+    { polygonId: 'POL-001', seqNo: 1, receiverName: 'ЭкоПолигон "Северный"', receiverInn: '7701234567', facilityAddress: 'Москва, Дмитровское ш., 150', facilityCoordinates: '55.9500,37.5500', region: 'Москва', phone: '+7 (495) 123-45-67', email: 'info@ecopolygon-north.ru', kipNumber: 'КИП-001', fkkoCodes: '10000000000;20000000000', isActive: true },
+    { polygonId: 'POL-002', seqNo: 2, receiverName: 'ЭкоПолигон "Южный"', receiverInn: '7702345678', facilityAddress: 'Москва, Варшавское ш., 200', facilityCoordinates: '55.5500,37.6000', region: 'Москва', phone: '+7 (495) 234-56-78', email: 'info@ecopolygon-south.ru', kipNumber: 'КИП-002', fkkoCodes: '10000000000;20000000000', isActive: true },
+    { polygonId: 'POL-003', seqNo: 3, receiverName: 'ЭкоПолигон "Восточный"', receiverInn: '7703456789', facilityAddress: 'Московская обл., г. Балашиха, Носовихинское ш., 50', facilityCoordinates: '55.8000,37.9500', region: 'Московская область', phone: '+7 (495) 345-67-89', email: 'info@ecopolygon-east.ru', kipNumber: 'КИП-003', fkkoCodes: '10000000000;20000000000', isActive: true },
+    { polygonId: 'POL-004', seqNo: 4, receiverName: 'ЭкоПолигон "Западный"', receiverInn: '7704567890', facilityAddress: 'Московская обл., г. Одинцово, Можайское ш., 100', facilityCoordinates: '55.7200,37.2500', region: 'Московская область', phone: '+7 (495) 456-78-90', email: 'info@ecopolygon-west.ru', kipNumber: 'КИП-004', fkkoCodes: '10000000000;20000000000', isActive: true },
+    { polygonId: 'POL-005', seqNo: 5, receiverName: 'ЭкоПолигон "Подмосковный"', receiverInn: '5001234567', facilityAddress: 'Московская обл., г. Химки, Ленинградское ш., 250', facilityCoordinates: '55.8900,37.4300', region: 'Московская область', phone: '+7 (495) 567-89-01', email: 'info@ecopolygon-podmoskovny.ru', kipNumber: 'КИП-005', fkkoCodes: '10000000000;20000000000', isActive: true },
+  ]
+
+  for (const polygon of polygons) {
+    await prisma.polygon.create({
+      data: {
+        polygonId: polygon.polygonId,
+        seqNo: polygon.seqNo,
+        receiverName: polygon.receiverName,
+        receiverInn: polygon.receiverInn,
+        facilityAddress: polygon.facilityAddress,
+        facilityCoordinates: polygon.facilityCoordinates,
+        region: polygon.region,
+        phone: polygon.phone,
+        email: polygon.email,
+        kipNumber: polygon.kipNumber,
+        fkkoCodes: polygon.fkkoCodes,
+        isActive: polygon.isActive,
+      },
+    })
+  }
+  console.log(`✅ Создано ${polygons.length} полигонов`)
+
+  // Создаём конфигурацию тарифов
+  await prisma.transportTariffConfig.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      id: 1,
+      startKm: 0,
+      startTariff: 200,
+      endKm: 500,
+      endTariff: 50,
+      point1Km: 50,
+      point1Tariff: 150,
+      point2Km: 100,
+      point2Tariff: 120,
+      point3Km: 200,
+      point3Tariff: 90,
+      paramA: 1,
+      paramB: 0.5,
+      paramC: 2,
+      hyperMinKm: 100,
+      hyperMaxKm: 500,
+      volumeCoeff: 1.4,
+      marginPercent: 20,
+      maxDistanceKm: 500,
+    },
+  })
+  console.log('✅ Конфигурация тарифов создана')
+  console.log('✨ Тарифы и полигоны созданы!')
 }
 
 main()

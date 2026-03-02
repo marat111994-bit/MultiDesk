@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { generateCommercialOfferHtml, generatePdfWithPuppeteer } from '@/lib/pdf/generate-pdf';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/calculator/pdf/[id]
@@ -61,7 +62,7 @@ export async function GET(
           });
         }
       } catch (error) {
-        console.error('Error reading cached file:', error);
+        logger.error('pdf/[id]: error reading cached file', { message: error instanceof Error ? error.message : String(error) });
         // Продолжаем генерацию если файл не найден
       }
     }
@@ -122,7 +123,7 @@ export async function GET(
       isPdf = true;
     } catch (error) {
       // Puppeteer недоступен - генерируем HTML
-      console.log('Puppeteer unavailable, generating HTML instead');
+      logger.info('pdf/[id]: Puppeteer unavailable, generating HTML instead');
       fileBuffer = Buffer.from(html, 'utf-8');
       filePath = path.join(pdfDir, `КП-${calculation.calculationId}.html`);
       isPdf = false;
@@ -148,7 +149,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    logger.error('pdf/[id]: error generating PDF', { message: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Ошибка при генерации PDF', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

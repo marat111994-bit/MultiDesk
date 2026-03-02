@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 export async function GET(
   request: NextRequest,
@@ -30,7 +31,7 @@ export async function GET(
 
     return NextResponse.json(caseItem)
   } catch (error) {
-    console.error("Error fetching case:", error)
+    logger.error("Error fetching case:", error)
     return NextResponse.json(
       { error: "Failed to fetch case" },
       { status: 500 }
@@ -71,7 +72,7 @@ export async function PUT(
 
     return NextResponse.json(caseItem)
   } catch (error) {
-    console.error("Error updating case:", error)
+    logger.error("Error updating case:", error)
     return NextResponse.json(
       { error: "Failed to update case" },
       { status: 500 }
@@ -100,7 +101,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error deleting case:", error)
+    logger.error("Error deleting case:", error)
     return NextResponse.json(
       { error: "Failed to delete case" },
       { status: 500 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { prisma } from "@/lib/prisma"
 import { unlink } from "fs/promises"
+import { logger } from "@/lib/logger"
 
 export async function GET(
   request: NextRequest,
@@ -28,7 +29,7 @@ export async function GET(
 
     return NextResponse.json(mediaFile)
   } catch (error) {
-    console.error("Error fetching media file:", error)
+    logger.error("Error fetching media file:", error)
     return NextResponse.json(
       { error: "Failed to fetch media file" },
       { status: 500 }
@@ -62,7 +63,7 @@ export async function PUT(
 
     return NextResponse.json(mediaFile)
   } catch (error) {
-    console.error("Error updating media file:", error)
+    logger.error("Error updating media file:", error)
     return NextResponse.json(
       { error: "Failed to update media file" },
       { status: 500 }
@@ -110,7 +111,7 @@ export async function DELETE(
         await unlink(`${dir}/${file}`)
       }
     } catch (e) {
-      console.error("Error deleting files:", e)
+      logger.error("Error deleting files:", e)
     }
 
     // Удаляем из БД
@@ -120,7 +121,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error deleting media file:", error)
+    logger.error("Error deleting media file:", error)
     return NextResponse.json(
       { error: "Failed to delete media file" },
       { status: 500 }

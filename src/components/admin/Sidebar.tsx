@@ -17,6 +17,7 @@ import {
   ExternalLink,
   X,
   Calculator,
+  Table,
 } from "lucide-react"
 import { signOut } from "next-auth/react"
 import { useState, useEffect } from "react"
@@ -38,6 +39,7 @@ const navigation = [
 const calculatorNavigation = [
   { name: "Полигоны", href: "/admin/calculator/polygons", icon: FolderOpen },
   { name: "Тарифы", href: "/admin/calculator/tariffs", icon: Calculator },
+  { name: "База ФККО", href: "/admin/calculator/fkko", icon: Table },
 ]
 
 interface SidebarProps {

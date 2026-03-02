@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/calculator/applications/[id]
@@ -73,7 +74,7 @@ export async function GET(
 
     return NextResponse.json(calculation);
   } catch (error) {
-    console.error('Error fetching application:', error);
+    logger.error('applications/[id]: error', { message: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Ошибка при получении заявки' },
       { status: 500 }

@@ -79,11 +79,17 @@ export default function AdminCalculatorPolygonsPage() {
   }
 
   const filteredPolygons = polygons.filter(polygon => {
+    const searchLower = search.toLowerCase()
+    // Удаляем кавычки и префиксы из названия для поиска
+    const cleanReceiverName = polygon.receiverName.toLowerCase()
+      .replace(/["']/g, '')
+      .replace(/^(ооо|ип|ао|пао)\s*/i, '')
+    
     const matchesSearch = search === '' ||
-      polygon.receiverName.toLowerCase().includes(search.toLowerCase()) ||
-      polygon.facilityAddress.toLowerCase().includes(search.toLowerCase()) ||
-      polygon.region?.toLowerCase().includes(search.toLowerCase()) ||
-      polygon.polygonId.toLowerCase().includes(search.toLowerCase())
+      cleanReceiverName.includes(searchLower) ||
+      polygon.facilityAddress.toLowerCase().includes(searchLower) ||
+      polygon.region?.toLowerCase().includes(searchLower) ||
+      polygon.polygonId.toLowerCase().includes(searchLower)
 
     const matchesActive = isActiveFilter === 'all' ||
       (isActiveFilter === 'active' && polygon.isActive) ||

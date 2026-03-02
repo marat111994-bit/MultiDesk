@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 const generateTariffSchema = z.object({
   startKm: z.number().positive(),
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
       recordsGenerated,
     });
   } catch (error) {
-    console.error('Error generating transport tariffs:', error);
+    logger.error('Error generating transport tariffs:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

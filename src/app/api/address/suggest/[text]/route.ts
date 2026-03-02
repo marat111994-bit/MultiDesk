@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/address/suggest/[text]
@@ -14,6 +15,8 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const results = searchParams.get('results') || '10';
 
+    logger.info('address-suggest: request', { text, results })
+
     if (!text || text.length < 2) {
       return NextResponse.json(
         { error: 'Введите минимум 2 символа для поиска' },
@@ -21,11 +24,12 @@ export async function GET(
       );
     }
 
-    const apiKey = process.env.YANDEX_API_KEY;
+    const apiKey = process.env.YANDEX_SUGGEST_KEY || process.env.YANDEX_API_KEY;
 
     if (!apiKey) {
+      logger.error('address-suggest: API key missing')
       return NextResponse.json(
-        { error: 'YANDEX_API_KEY не настроен' },
+        { error: 'YANDEX_SUGGEST_KEY или YANDEX_API_KEY не настроен' },
         { status: 500 }
       );
     }
@@ -46,21 +50,39 @@ export async function GET(
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      logger.error('address-suggest: Yandex API error', { status: response.status, error: errorText.slice(0, 200) })
       throw new Error(`Yandex API error: ${response.status}`);
     }
 
     const data = await response.json();
 
-    // Преобразуем в массив строк с адресами
-    const suggestions = data.results?.map((item: { title: { text: string }; subtitle?: { text: string } }) => {
+    logger.info('address-suggest: received', { count: data.results?.length || 0 })
+
+    // Преобразуем в формат AddressSuggestion[]
+    const suggestions = data.results?.map((item: { 
+      title: { text: string }; 
+      subtitle?: { text: string };
+      point?: { lon: string; lat: string };
+    }) => {
       const title = item.title?.text || '';
       const subtitle = item.subtitle?.text || '';
-      return subtitle ? `${title}, ${subtitle}` : title;
+      // Яндекс.Суггест может возвращать координаты в point
+      let coords = '';
+      if (item.point && item.point.lon && item.point.lat) {
+        coords = `${item.point.lat},${item.point.lon}`;
+      }
+      return {
+        value: subtitle ? `${title}, ${subtitle}` : title,
+        coords
+      };
     }) || [];
+
+    logger.info('address-suggest: response', { suggestionsCount: suggestions.length })
 
     return NextResponse.json(suggestions);
   } catch (error) {
-    console.error('Error fetching address suggestions:', error);
+    logger.error('address-suggest: error', { message: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Ошибка при получении подсказок адресов' },
       { status: 500 }

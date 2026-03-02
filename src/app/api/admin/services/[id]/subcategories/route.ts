@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 export async function GET(
   request: NextRequest,
@@ -30,7 +31,7 @@ export async function GET(
 
     return NextResponse.json(subcategories)
   } catch (error) {
-    console.error("Error fetching subcategories:", error)
+    logger.error("Error fetching subcategories:", error)
     return NextResponse.json(
       { error: "Failed to fetch subcategories" },
       { status: 500 }
@@ -81,7 +82,7 @@ export async function POST(
 
     return NextResponse.json(subcategory)
   } catch (error) {
-    console.error("Error creating subcategory:", error)
+    logger.error("Error creating subcategory:", error)
     return NextResponse.json(
       { error: "Failed to create subcategory" },
       { status: 500 }

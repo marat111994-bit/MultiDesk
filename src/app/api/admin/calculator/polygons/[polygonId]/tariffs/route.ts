@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/admin/calculator/polygons/[polygonId]/tariffs
@@ -38,11 +39,26 @@ export async function GET(
     const tariffs = await prisma.utilizationTariff.findMany({
       where: { polygonId },
       orderBy: { fkkoCode: 'asc' },
+      include: {
+        cargoItem: {
+          select: {
+            itemName: true,
+            hazardClass: true,
+          },
+        },
+      },
     });
 
-    return NextResponse.json(tariffs);
+    // Преобразуем тарифы, добавляя itemName и hazardClass из cargoItem
+    const tariffsWithNames = tariffs.map((tariff) => ({
+      ...tariff,
+      itemName: tariff.cargoItem?.itemName || null,
+      hazardClass: tariff.cargoItem?.hazardClass || null,
+    }));
+
+    return NextResponse.json(tariffsWithNames);
   } catch (error) {
-    console.error('Error fetching tariffs:', error);
+    logger.error('Error fetching tariffs:', error);
     return NextResponse.json(
       { error: 'Ошибка при получении тарифов' },
       { status: 500 }
@@ -121,7 +137,7 @@ export async function POST(
       tariff,
     });
   } catch (error) {
-    console.error('Error creating tariff:', error);
+    logger.error('Error creating tariff:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

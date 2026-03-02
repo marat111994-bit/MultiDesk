@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/calculator/cargo-categories
@@ -18,7 +19,7 @@ export async function GET() {
 
     return NextResponse.json(categories);
   } catch (error) {
-    console.error('Error fetching cargo categories:', error);
+    logger.error('cargo-categories: error', { message: error instanceof Error ? error.message : String(error) });
     return NextResponse.json(
       { error: 'Ошибка при получении категорий грузов' },
       { status: 500 }

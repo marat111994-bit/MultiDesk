@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 // Схема валидации
 const contactSchema = z.object({
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error processing contact form:", error);
+    logger.error('contact: error', { message: error instanceof Error ? error.message : String(error) });
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

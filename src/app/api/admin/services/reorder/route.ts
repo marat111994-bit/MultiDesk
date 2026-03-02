@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { prisma } from "@/lib/prisma"
+import { logger } from "@/lib/logger"
 
 export async function PUT(request: NextRequest) {
   try {
@@ -27,7 +28,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error reordering services:", error)
+    logger.error("Error reordering services:", error)
     return NextResponse.json(
       { error: "Failed to reorder services" },
       { status: 500 }

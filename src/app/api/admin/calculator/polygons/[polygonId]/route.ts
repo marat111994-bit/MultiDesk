@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/admin/calculator/polygons/[polygonId]
@@ -31,6 +32,14 @@ export async function GET(
       include: {
         utilizationTariffs: {
           orderBy: { fkkoCode: 'asc' },
+          include: {
+            cargoItem: {
+              select: {
+                itemName: true,
+                hazardClass: true,
+              },
+            },
+          },
         },
         _count: {
           select: {
@@ -44,9 +53,19 @@ export async function GET(
       return NextResponse.json({ error: 'Полигон не найден' }, { status: 404 });
     }
 
-    return NextResponse.json(polygon);
+    // Преобразуем тарифы, добавляя itemName и hazardClass из cargoItem
+    const tariffs = polygon.utilizationTariffs.map((tariff) => ({
+      ...tariff,
+      itemName: tariff.cargoItem?.itemName || null,
+      hazardClass: tariff.cargoItem?.hazardClass || null,
+    }));
+
+    return NextResponse.json({
+      ...polygon,
+      utilizationTariffs: tariffs,
+    });
   } catch (error) {
-    console.error('Error fetching polygon:', error);
+    logger.error('Error fetching polygon:', error);
     return NextResponse.json(
       { error: 'Ошибка при получении полигона' },
       { status: 500 }
@@ -110,7 +129,7 @@ export async function PUT(
       polygon,
     });
   } catch (error) {
-    console.error('Error updating polygon:', error);
+    logger.error('Error updating polygon:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
