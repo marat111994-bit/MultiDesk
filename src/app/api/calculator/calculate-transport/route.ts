@@ -92,6 +92,13 @@ export async function POST(request: NextRequest) {
     logger.error('calculate-transport: error', { message: error instanceof Error ? error.message : String(error) });
 
     if (error instanceof z.ZodError) {
+      const volumeError = error.issues.find(issue => issue.path.includes('volume'));
+      if (volumeError) {
+        return NextResponse.json(
+          { error: 'Объём груза должен быть больше 0. Проверьте данные на шаге "Груз".' },
+          { status: 400 }
+        );
+      }
       return NextResponse.json(
         { error: 'Ошибка валидации данных', details: error.issues },
         { status: 400 }

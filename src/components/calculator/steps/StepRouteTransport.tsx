@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { AddressData, TransportResult } from '@/lib/types/calculator';
+import { AddressData, TransportResult, CargoData } from '@/lib/types/calculator';
 import { debounce, validateCoords, formatMode, formatPrice } from '@/lib/utils/calculator';
 
 interface AddressSuggestion {
@@ -14,6 +14,7 @@ interface StepRouteTransportProps {
     pickup: AddressData;
     dropoff?: AddressData;
     result?: TransportResult;
+    cargo: CargoData;
   };
   onChange: (field: string, value: unknown) => void;
   onNext: () => void;
@@ -282,9 +283,9 @@ export function StepRouteTransport({ formData, onChange, onNext, onBack }: StepR
       const requestBody = {
         pickupCoords: formData.pickup.coords,
         dropoffCoords: formData.dropoff?.coords,
-        volume: 0, // будет передано из родителя
-        unit: 't' as const,
-        compaction: 1,
+        volume: formData.cargo.volume,
+        unit: formData.cargo.unit,
+        compaction: formData.cargo.compaction,
       };
 
       const response = await fetch('/api/calculator/calculate-transport', {
@@ -348,8 +349,8 @@ export function StepRouteTransport({ formData, onChange, onNext, onBack }: StepR
     return Object.keys(newErrors).length === 0;
   };
 
-  const isFormValid = validate();
-  const canCalculate = isFormValid && !isCalculating;
+  const canCalculate = formData.pickup.address.trim() && formData.pickup.coords && 
+                       formData.dropoff?.address.trim() && formData.dropoff?.coords && !isCalculating;
 
   return (
     <div className="space-y-6">
