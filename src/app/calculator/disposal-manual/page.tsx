@@ -3,23 +3,17 @@
 import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalculatorLayout } from '@/components/calculator/CalculatorLayout';
-import { StepContact } from '@/components/calculator/steps/StepContact';
-import { StepCompany } from '@/components/calculator/steps/StepCompany';
 import { StepCargo } from '@/components/calculator/steps/StepCargo';
-import { StepPickup } from '@/components/calculator/steps/StepPickup';
-import { StepPolygonManual } from '@/components/calculator/steps/StepPolygonManual';
-import { StepReviewDisposal } from '@/components/calculator/steps/StepReviewDisposal';
+import { StepRouteDisposalManual } from '@/components/calculator/steps/StepRouteDisposalManual';
+import { StepContact } from '@/components/calculator/steps/StepContact';
 import { StepSuccess } from '@/components/calculator/steps/StepSuccess';
 import { FormData, createInitialFormData } from '@/lib/types/calculator';
 
 const STEP_TITLES = [
-  'Контактные данные',
-  'Данные компании',
-  'Информация о грузе',
-  'Адрес погрузки',
-  'Поиск полигона',
-  'Проверка данных',
-  'Готово',
+  'Груз',
+  'Маршрут',
+  'Контакты',
+  'Успех',
 ];
 
 export default function DisposalManualCalculatorPage() {
@@ -49,14 +43,14 @@ export default function DisposalManualCalculatorPage() {
   }, []);
 
   const handleNext = useCallback(() => {
-    setStep((prev) => Math.min(prev + 1, 7));
+    setStep((prev) => Math.min(prev + 1, 4));
   }, []);
 
   const handleBack = useCallback(() => {
     setStep((prev) => Math.max(prev - 1, 1));
   }, []);
 
-  // Шаг 6 -> Шаг 7: отправка заявки
+  // Шаг 3 -> отправка заявки
   const handleSubmitApplication = useCallback(async () => {
     setIsSubmitting(true);
     setError(null);
@@ -72,10 +66,6 @@ export default function DisposalManualCalculatorPage() {
           // Контакты
           contactName: formData.contact.name,
           contactPhone: formData.contact.phone,
-          contactEmail: formData.contact.email,
-          // Компания
-          companyName: formData.company.name,
-          companyInn: formData.company.inn,
           // Груз
           cargoName: formData.cargo.name,
           cargoCode: formData.cargo.code,
@@ -109,9 +99,10 @@ export default function DisposalManualCalculatorPage() {
       setFormData((prev) => ({
         ...prev,
         applicationId: data.id,
+        calculationId: data.calculationId,
       }));
 
-      setStep(7);
+      setStep(4);
     } catch (err) {
       console.error('Error submitting application:', err);
       setError('Не удалось сохранить заявку. Попробуйте позже.');
@@ -121,31 +112,11 @@ export default function DisposalManualCalculatorPage() {
     }
   }, [formData]);
 
-  // Показываем тост с ошибкой
   const showToast = error !== null;
 
-  // Рендеринг текущего шага
   const renderStep = () => {
     switch (step) {
       case 1:
-        return (
-          <StepContact
-            formData={formData}
-            onChange={handleChange}
-            onNext={handleNext}
-            onBack={handleBack}
-          />
-        );
-      case 2:
-        return (
-          <StepCompany
-            formData={formData}
-            onChange={handleChange}
-            onNext={handleNext}
-            onBack={handleBack}
-          />
-        );
-      case 3:
         return (
           <StepCargo
             formData={formData}
@@ -154,34 +125,25 @@ export default function DisposalManualCalculatorPage() {
             onBack={handleBack}
           />
         );
+      case 2:
+        return (
+          <StepRouteDisposalManual
+            formData={formData}
+            onChange={handleChange}
+            onNext={handleNext}
+            onBack={handleBack}
+          />
+        );
+      case 3:
+        return (
+          <StepContact
+            formData={formData}
+            onChange={handleChange}
+            onNext={handleSubmitApplication}
+            onBack={handleBack}
+          />
+        );
       case 4:
-        return (
-          <StepPickup
-            formData={formData}
-            onChange={handleChange}
-            onNext={handleNext}
-            onBack={handleBack}
-          />
-        );
-      case 5:
-        return (
-          <StepPolygonManual
-            formData={formData}
-            onChange={handleChange}
-            onNext={handleNext}
-            onBack={handleBack}
-          />
-        );
-      case 6:
-        return (
-          <StepReviewDisposal
-            formData={formData}
-            onBack={handleBack}
-            onSubmit={handleSubmitApplication}
-            isSubmitting={isSubmitting}
-          />
-        );
-      case 7:
         return (
           <StepSuccess
             formData={formData}
@@ -193,13 +155,14 @@ export default function DisposalManualCalculatorPage() {
     }
   };
 
-  // Пропускаем навигационные кнопки на шаге 7
-  const hideNext = step === 7;
-  const hideBack = step === 1 || step === 7;
+  const hideNext = step === 3 || step === 4;
+  const hideBack = step === 1 || step === 4;
+
+  const nextDisabled = isSubmitting;
+  const nextLabel = isSubmitting ? 'Отправка...' : 'Далее';
 
   return (
     <>
-      {/* Тост с ошибкой */}
       {showToast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50">
           <div className="bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
@@ -218,15 +181,26 @@ export default function DisposalManualCalculatorPage() {
 
       <CalculatorLayout
         step={step}
-        totalSteps={7}
+        totalSteps={4}
         stepTitle={STEP_TITLES[step - 1]}
         onBack={handleBack}
-        onNext={handleNext}
+        onNext={step === 3 ? handleSubmitApplication : handleNext}
+        nextDisabled={nextDisabled}
+        nextLabel={nextLabel}
         hideBack={hideBack}
         hideNext={hideNext}
       >
         {renderStep()}
       </CalculatorLayout>
+
+      {isSubmitting && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <p className="text-gray-700 font-medium">Отправка заявки...</p>
+          </div>
+        </div>
+      )}
     </>
   );
 }
