@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalculatorLayout } from '@/components/calculator/CalculatorLayout';
 import { StepCargo } from '@/components/calculator/steps/StepCargo';
@@ -23,6 +23,11 @@ export default function TransportCalculatorPage() {
   const [formData, setFormData] = useState<FormData>(createInitialFormData());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const formDataRef = useRef<FormData>(formData);
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
 
   const handleChange = useCallback((field: string, value: unknown) => {
     setFormData((prev) => {
@@ -51,12 +56,12 @@ export default function TransportCalculatorPage() {
     setStep((prev) => Math.max(prev - 1, 1));
   }, []);
 
-  // Шаг 3 -> отправка заявки
   const handleSubmitApplication = useCallback(async () => {
     setIsSubmitting(true);
     setError(null);
 
     try {
+      const current = formDataRef.current;
       const response = await fetch('/api/calculator/applications', {
         method: 'POST',
         headers: {
@@ -64,29 +69,24 @@ export default function TransportCalculatorPage() {
         },
         body: JSON.stringify({
           serviceType: 'transport',
-          // Контакты
-          contactName: formData.contact.name,
-          contactPhone: formData.contact.phone,
-          // Груз
-          cargoName: formData.cargo.name,
-          cargoCode: formData.cargo.code,
-          fkkoCode: formData.cargo.fkkoCode,
-          volume: formData.cargo.volume,
-          unit: formData.cargo.unit,
-          compaction: formData.cargo.compaction,
-          // Погрузка
-          pickupAddress: formData.pickup.address,
-          pickupCoords: formData.pickup.coords,
-          pickupMode: formData.pickup.mode,
-          // Выгрузка
-          dropoffAddress: formData.dropoff?.address,
-          dropoffCoords: formData.dropoff?.coords,
-          dropoffMode: formData.dropoff?.mode,
-          // Результат расчёта
-          distanceKm: formData.result?.distanceKm,
-          transportTariff: formData.result?.transportTariff,
-          transportPrice: formData.result?.transportPrice,
-          totalPrice: formData.result?.totalPrice || 0,
+          contactName: current.contact.name,
+          contactPhone: current.contact.phone,
+          cargoName: current.cargo.name,
+          cargoCode: current.cargo.code,
+          fkkoCode: current.cargo.fkkoCode,
+          volume: current.cargo.volume,
+          unit: current.cargo.unit,
+          compaction: current.cargo.compaction,
+          pickupAddress: current.pickup.address,
+          pickupCoords: current.pickup.coords,
+          pickupMode: current.pickup.mode,
+          dropoffAddress: current.dropoff?.address,
+          dropoffCoords: current.dropoff?.coords,
+          dropoffMode: current.dropoff?.mode,
+          distanceKm: current.result?.distanceKm,
+          transportTariff: current.result?.transportTariff,
+          transportPrice: current.result?.transportPrice,
+          totalPrice: current.result?.totalPrice || 0,
         }),
       });
 
@@ -110,7 +110,7 @@ export default function TransportCalculatorPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData]);
+  }, []);
 
   const showToast = error !== null;
 

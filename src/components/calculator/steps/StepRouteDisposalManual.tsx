@@ -267,7 +267,6 @@ export function StepRouteDisposalManual({ formData, onChange, onNext, onBack }: 
     return Object.keys(newErrors).length === 0;
   };
 
-  const isFormValid = validate();
   const canProceed = calculationResult !== null && !isCalculating;
 
   return (

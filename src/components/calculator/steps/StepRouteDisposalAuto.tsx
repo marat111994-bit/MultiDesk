@@ -246,8 +246,7 @@ export function StepRouteDisposalAuto({ formData, onChange, onNext, onBack }: St
     return Object.keys(newErrors).length === 0;
   };
 
-  const isFormValid = validate();
-  const canSearch = isFormValid && !isSearching;
+  const canSearch = formData.pickup.address.trim() && formData.pickup.coords && !isSearching;
   const canProceed = selectedId !== null && polygons.length > 0;
 
   return (
