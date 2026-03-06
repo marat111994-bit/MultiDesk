@@ -68,7 +68,7 @@ export function CalculatorLayout({
             {!hideBack && (
               <button
                 onClick={onBack}
-                className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transform active:scale-95 transition-all duration-150 cursor-pointer"
               >
                 ← Назад
               </button>

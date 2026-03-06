@@ -491,7 +491,7 @@ export function StepRouteDisposalAuto({ formData, onChange, onNext, onBack }: St
         <button
           onClick={onBack}
           disabled={isSearching}
-          className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+          className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transform active:scale-95 transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           ← Назад
         </button>

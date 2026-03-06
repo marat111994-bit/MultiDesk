@@ -241,7 +241,7 @@ export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps
                 value={searchQuery}
                 onChange={handleSearchChange}
                 onKeyDown={handleSearchKeyDown}
-                placeholder="🔍 Введите код ФККО или название груза..."
+                placeholder="Введите код ФККО или название груза..."
                 className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
                 autoComplete="off"
                 autoCorrect="off"
@@ -451,7 +451,7 @@ export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps
       <div className="flex gap-4 pt-4">
         <button
           onClick={onBack}
-          className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+          className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200 transform active:scale-95 transition-all duration-150 cursor-pointer"
         >
           ← Назад
         </button>
