@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { AddressData, TransportResult, CargoData } from '@/lib/types/calculator';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { AddressData, TransportResult, CargoData, PolygonSearchResult } from '@/lib/types/calculator';
 import { debounce, validateCoords, formatMode, formatPrice } from '@/lib/utils/calculator';
 
 interface AddressSuggestion {
@@ -37,6 +37,29 @@ export function StepRouteTransport({ formData, onChange, onNext, onBack }: StepR
   const [dropoffCoordsError, setDropoffCoordsError] = useState<string>('');
   const [isCalculating, setIsCalculating] = useState(false);
   const [calculationError, setCalculationError] = useState<string | null>(null);
+
+  // Переключатель типа выгрузки
+  const [dropoffType, setDropoffType] = useState<'address' | 'polygon'>('address');
+
+  // Поиск полигона
+  const [polygonSearchQuery, setPolygonSearchQuery] = useState('');
+  const [polygonSearchResults, setPolygonSearchResults] = useState<PolygonSearchResult[]>([]);
+  const [isSearchingPolygons, setIsSearchingPolygons] = useState(false);
+  const [showPolygonSuggestions, setShowPolygonSuggestions] = useState(false);
+  const [selectedPolygon, setSelectedPolygon] = useState<PolygonSearchResult | null>(null);
+  const polygonDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Закрытие дропдауна полигонов при клике вне
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (polygonDropdownRef.current && !polygonDropdownRef.current.contains(event.target as Node)) {
+        setShowPolygonSuggestions(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchPickupSuggestions = useCallback(
     debounce(async (query: string) => {
@@ -79,6 +102,30 @@ export function StepRouteTransport({ formData, onChange, onNext, onBack }: StepR
         console.error('Error fetching dropoff address suggestions:', error);
       } finally {
         setIsLoading(false);
+      }
+    }, 300),
+    []
+  );
+
+  const fetchPolygonSuggestions = useCallback(
+    debounce(async (query: string) => {
+      if (query.length < 2) {
+        setPolygonSearchResults([]);
+        return;
+      }
+
+      setIsSearchingPolygons(true);
+      try {
+        const response = await fetch(`/api/calculator/polygons/search?search=${encodeURIComponent(query)}&limit=50`);
+        if (response.ok) {
+          const data = await response.json();
+          setPolygonSearchResults(data);
+          setShowPolygonSuggestions(true);
+        }
+      } catch (error) {
+        console.error('Error fetching polygon suggestions:', error);
+      } finally {
+        setIsSearchingPolygons(false);
       }
     }, 300),
     []
@@ -162,6 +209,13 @@ export function StepRouteTransport({ formData, onChange, onNext, onBack }: StepR
     }
     fetchDropoffSuggestions(value);
     setShowDropoffSuggestions(true);
+  };
+
+  const handlePolygonSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPolygonSearchQuery(value);
+    fetchPolygonSuggestions(value);
+    setShowPolygonSuggestions(true);
   };
 
   const handlePickupCoordsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -275,6 +329,45 @@ export function StepRouteTransport({ formData, onChange, onNext, onBack }: StepR
     }
   };
 
+  const selectPolygon = (polygon: PolygonSearchResult) => {
+    setSelectedPolygon(polygon);
+    setPolygonSearchQuery(polygon.receiverName);
+    setShowPolygonSuggestions(false);
+    setPolygonSearchResults([]);
+
+    // Подставляем адрес и координаты полигона в данные выгрузки
+    onChange('dropoff.address', polygon.facilityAddress);
+    
+    if (polygon.facilityCoordinates) {
+      const formattedCoords = polygon.facilityCoordinates.includes(' ')
+        ? polygon.facilityCoordinates.replace(' ', ', ')
+        : polygon.facilityCoordinates;
+      onChange('dropoff.coords', formattedCoords);
+    }
+
+    // Режим работы берём из полигона (по умолчанию 24/7 если не указано)
+    onChange('dropoff.mode', '24');
+  };
+
+  const clearPolygonSelection = () => {
+    setSelectedPolygon(null);
+    setPolygonSearchQuery('');
+    setPolygonSearchResults([]);
+    onChange('dropoff.address', '');
+    onChange('dropoff.coords', '');
+  };
+
+  const handleDropoffTypeChange = (type: 'address' | 'polygon') => {
+    setDropoffType(type);
+    if (type === 'address') {
+      clearPolygonSelection();
+    } else {
+      // При переключении на полигон очищаем ручной ввод
+      onChange('dropoff.address', '');
+      onChange('dropoff.coords', '');
+    }
+  };
+
   const handleCalculate = async () => {
     setIsCalculating(true);
     setCalculationError(null);
@@ -349,7 +442,7 @@ export function StepRouteTransport({ formData, onChange, onNext, onBack }: StepR
     return Object.keys(newErrors).length === 0;
   };
 
-  const canCalculate = formData.pickup.address.trim() && formData.pickup.coords && 
+  const canCalculate = formData.pickup.address.trim() && formData.pickup.coords &&
                        formData.dropoff?.address.trim() && formData.dropoff?.coords && !isCalculating;
 
   return (
@@ -466,116 +559,254 @@ export function StepRouteTransport({ formData, onChange, onNext, onBack }: StepR
         </div>
       </div>
 
-      {/* БЛОК Б — Адрес выгрузки */}
+      {/* БЛОК Б — Адрес выгрузки с переключателем */}
       <div className="bg-white border border-gray-200 rounded-xl p-5">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <span>🏁</span> Адрес выгрузки *
         </h3>
 
-        <div className="space-y-4">
-          {/* Адрес выгрузки */}
-          <div className="relative">
-            <label htmlFor="dropoffAddress" className="block text-sm font-medium text-gray-700 mb-2">
-              Адрес
-            </label>
-            <input
-              type="text"
-              id="dropoffAddress"
-              value={formData.dropoff?.address || ''}
-              onChange={handleDropoffAddressChange}
-              onFocus={() => setShowDropoffSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowDropoffSuggestions(false), 200)}
-              placeholder="Начните вводить адрес..."
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
-                errors.dropoffAddress ? 'border-red-500' : 'border-gray-300'
+        {/* Переключатель типа выгрузки */}
+        <div className="mb-4">
+          <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1">
+            <button
+              onClick={() => handleDropoffTypeChange('address')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                dropoffType === 'address'
+                  ? 'bg-white text-blue-700 shadow-sm border border-gray-200'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
-            />
-            {errors.dropoffAddress && <p className="mt-1 text-sm text-red-600">{errors.dropoffAddress}</p>}
+            >
+              <span>📍</span> Адрес
+            </button>
+            <button
+              onClick={() => handleDropoffTypeChange('polygon')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                dropoffType === 'polygon'
+                  ? 'bg-white text-blue-700 shadow-sm border border-gray-200'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <span>🏭</span> Полигон
+            </button>
+          </div>
+        </div>
 
-            {/* Выпадающий список подсказок */}
-            {showDropoffSuggestions && (dropoffSuggestions.length > 0 || isLoading) && (
-              <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {isLoading && (
-                  <div className="px-4 py-3 text-gray-500 text-sm">Загрузка...</div>
+        {dropoffType === 'address' ? (
+          /* Режим "Адрес" — ручной ввод */
+          <div className="space-y-4">
+            {/* Адрес выгрузки */}
+            <div className="relative">
+              <label htmlFor="dropoffAddress" className="block text-sm font-medium text-gray-700 mb-2">
+                Адрес
+              </label>
+              <input
+                type="text"
+                id="dropoffAddress"
+                value={formData.dropoff?.address || ''}
+                onChange={handleDropoffAddressChange}
+                onFocus={() => setShowDropoffSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowDropoffSuggestions(false), 200)}
+                placeholder="Начните вводить адрес..."
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
+                  errors.dropoffAddress ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {errors.dropoffAddress && <p className="mt-1 text-sm text-red-600">{errors.dropoffAddress}</p>}
+
+              {/* Выпадающий список подсказок */}
+              {showDropoffSuggestions && (dropoffSuggestions.length > 0 || isLoading) && (
+                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {isLoading && (
+                    <div className="px-4 py-3 text-gray-500 text-sm">Загрузка...</div>
+                  )}
+                  {dropoffSuggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => selectDropoffSuggestion(suggestion)}
+                      className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
+                    >
+                      {suggestion.value}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Координаты выгрузки */}
+            <div>
+              <label htmlFor="dropoffCoords" className="block text-sm font-medium text-gray-700 mb-2">
+                Координаты
+              </label>
+              <input
+                type="text"
+                id="dropoffCoords"
+                value={formatCoordsForInput(formData.dropoff?.coords || '')}
+                onChange={handleDropoffCoordsChange}
+                placeholder="55.7558, 37.6173"
+                className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
+                  dropoffCoordsError ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {dropoffCoordsError && <p className="mt-1 text-xs text-red-600">{dropoffCoordsError}</p>}
+            </div>
+
+            {/* Режим работы на выгрузке */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Режим работы
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => handleDropoffModeChange('night')}
+                  className={`px-3 py-2 rounded-lg border-2 transition-colors ${
+                    formData.dropoff?.mode === 'night'
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="text-lg">🌙</span>
+                  <p className="text-xs font-medium mt-0.5">Ночь</p>
+                </button>
+
+                <button
+                  onClick={() => handleDropoffModeChange('day')}
+                  className={`px-3 py-2 rounded-lg border-2 transition-colors ${
+                    formData.dropoff?.mode === 'day'
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="text-lg">☀️</span>
+                  <p className="text-xs font-medium mt-0.5">День</p>
+                </button>
+
+                <button
+                  onClick={() => handleDropoffModeChange('24')}
+                  className={`px-3 py-2 rounded-lg border-2 transition-colors ${
+                    formData.dropoff?.mode === '24'
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="text-lg">🔄</span>
+                  <p className="text-xs font-medium mt-0.5">24/7</p>
+                </button>
+              </div>
+              <p className="mt-1.5 text-xs text-gray-500">
+                Выбрано: <span className="font-medium">{formatMode(formData.dropoff?.mode || '24')}</span>
+              </p>
+            </div>
+          </div>
+        ) : (
+          /* Режим "Полигон" — поиск и выбор */
+          <div className="space-y-4" ref={polygonDropdownRef}>
+            <div className="relative">
+              <label htmlFor="polygonSearch" className="block text-sm font-medium text-gray-700 mb-2">
+                Поиск полигона
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  id="polygonSearch"
+                  value={polygonSearchQuery}
+                  onChange={handlePolygonSearchChange}
+                  onFocus={() => polygonSearchQuery.length >= 2 && setShowPolygonSuggestions(true)}
+                  placeholder="Введите название, адрес, район..."
+                  className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  🔍
+                </span>
+                {isSearchingPolygons && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    ⏳
+                  </span>
                 )}
-                {dropoffSuggestions.map((suggestion, index) => (
+              </div>
+
+              {/* Выпадающий список полигонов */}
+              {showPolygonSuggestions && (polygonSearchResults.length > 0 || isSearchingPolygons) && (
+                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto">
+                  {isSearchingPolygons && (
+                    <div className="px-4 py-3 text-gray-500 text-sm">Загрузка...</div>
+                  )}
+                  {polygonSearchResults.map((polygon, index) => (
+                    <button
+                      key={index}
+                      onClick={() => selectPolygon(polygon)}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="font-semibold text-gray-900 mb-1">
+                        {polygon.receiverName}
+                      </div>
+                      <div className="text-sm text-gray-600 mb-1">
+                        📍 {polygon.facilityAddress}
+                      </div>
+                      {polygon.region && (
+                        <div className="text-xs text-gray-500">
+                          🏛️ {polygon.region}
+                        </div>
+                      )}
+                      {polygon.phone && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          📞 {polygon.phone}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {showPolygonSuggestions && polygonSearchResults.length === 0 && polygonSearchQuery.length >= 2 && !isSearchingPolygons && (
+                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-gray-500">
+                  Полигоны не найдены
+                </div>
+              )}
+            </div>
+
+            {/* Карточка выбранного полигона */}
+            {selectedPolygon && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-green-600">✓</span>
+                      <span className="font-semibold text-gray-900">{selectedPolygon.receiverName}</span>
+                    </div>
+                    <div className="space-y-1 text-sm text-gray-600">
+                      <div>📍 {selectedPolygon.facilityAddress}</div>
+                      {selectedPolygon.region && <div>🏛️ {selectedPolygon.region}</div>}
+                      {selectedPolygon.phone && <div>📞 {selectedPolygon.phone}</div>}
+                      {selectedPolygon.email && <div>✉️ {selectedPolygon.email}</div>}
+                      {selectedPolygon.facilityCoordinates && (
+                        <div className="text-xs text-gray-500">
+                          Координаты: {formatCoordsForInput(selectedPolygon.facilityCoordinates)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <button
-                    key={index}
-                    onClick={() => selectDropoffSuggestion(suggestion)}
-                    className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
+                    onClick={clearPolygonSelection}
+                    className="ml-4 text-gray-400 hover:text-red-500 transition-colors"
+                    title="Изменить"
                   >
-                    {suggestion.value}
+                    ✕
                   </button>
-                ))}
+                </div>
+              </div>
+            )}
+
+            {/* Подсказка */}
+            {!selectedPolygon && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800">
+                  💡 Начните вводить название, адрес или район для поиска полигона. 
+                  При выборе полигона адрес и координаты заполнятся автоматически.
+                </p>
               </div>
             )}
           </div>
-
-          {/* Координаты выгрузки */}
-          <div>
-            <label htmlFor="dropoffCoords" className="block text-sm font-medium text-gray-700 mb-2">
-              Координаты
-            </label>
-            <input
-              type="text"
-              id="dropoffCoords"
-              value={formatCoordsForInput(formData.dropoff?.coords || '')}
-              onChange={handleDropoffCoordsChange}
-              placeholder="55.7558, 37.6173"
-              className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${
-                dropoffCoordsError ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {dropoffCoordsError && <p className="mt-1 text-xs text-red-600">{dropoffCoordsError}</p>}
-          </div>
-
-          {/* Режим работы на выгрузке */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Режим работы
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() => handleDropoffModeChange('night')}
-                className={`px-3 py-2 rounded-lg border-2 transition-colors ${
-                  formData.dropoff?.mode === 'night'
-                    ? 'border-blue-600 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <span className="text-lg">🌙</span>
-                <p className="text-xs font-medium mt-0.5">Ночь</p>
-              </button>
-
-              <button
-                onClick={() => handleDropoffModeChange('day')}
-                className={`px-3 py-2 rounded-lg border-2 transition-colors ${
-                  formData.dropoff?.mode === 'day'
-                    ? 'border-blue-600 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <span className="text-lg">☀️</span>
-                <p className="text-xs font-medium mt-0.5">День</p>
-              </button>
-
-              <button
-                onClick={() => handleDropoffModeChange('24')}
-                className={`px-3 py-2 rounded-lg border-2 transition-colors ${
-                  formData.dropoff?.mode === '24'
-                    ? 'border-blue-600 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <span className="text-lg">🔄</span>
-                <p className="text-xs font-medium mt-0.5">24/7</p>
-              </button>
-            </div>
-            <p className="mt-1.5 text-xs text-gray-500">
-              Выбрано: <span className="font-medium">{formatMode(formData.dropoff?.mode || '24')}</span>
-            </p>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Ошибка расчёта */}
