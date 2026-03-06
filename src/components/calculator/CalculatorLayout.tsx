@@ -28,31 +28,36 @@ export function CalculatorLayout({
   hideNext = false,
 }: CalculatorLayoutProps) {
   const progress = (step / totalSteps) * 100;
+  const isLastStep = step === totalSteps;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Прогрессбар */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-2xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">
-              Шаг {step} из {totalSteps}
-            </span>
-            <span className="text-sm text-gray-500">{Math.round(progress)}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
+      {/* Прогрессбар — скрываем на последнем шаге */}
+      {!isLastStep && (
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-2xl mx-auto px-4 py-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-600">
+                Шаг {step} из {totalSteps}
+              </span>
+              <span className="text-sm text-gray-500">{Math.round(progress)}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Контент */}
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">{stepTitle}</h1>
-        
+        {!isLastStep && (
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">{stepTitle}</h1>
+        )}
+
         {children}
       </div>
 
