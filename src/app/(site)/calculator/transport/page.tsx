@@ -53,8 +53,12 @@ export default function TransportCalculatorPage() {
   }, []);
 
   const handleBack = useCallback(() => {
-    setStep((prev) => Math.max(prev - 1, 1));
-  }, []);
+    if (step === 1) {
+      router.push('/calculator');
+    } else {
+      setStep((prev) => Math.max(prev - 1, 1));
+    }
+  }, [step, router]);
 
   const handleSubmitApplication = useCallback(async () => {
     setIsSubmitting(true);
