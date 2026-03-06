@@ -22,6 +22,8 @@ export interface CargoData {
   compaction: number;
   categoryCode?: string;
   hazardClass?: string;
+  isCustomCargo?: boolean;
+  customCargoName?: string;
 }
 
 export interface AddressData {
@@ -66,7 +68,7 @@ export interface FormData {
 
 export const createInitialFormData = (): FormData => ({
   contact: { name: '', phone: '' },
-  cargo: { name: '', code: '', fkkoCode: '', volume: 0, unit: 't', compaction: 1 },
+  cargo: { name: '', code: '', fkkoCode: '', volume: 1, unit: 't', compaction: 1, isCustomCargo: false, customCargoName: '' },
   pickup: { address: '', coords: '', mode: '24' },
 });
 
@@ -74,6 +76,18 @@ export const createInitialFormData = (): FormData => ({
 export interface AddressSuggestion {
   value: string;
   coords: string;
+}
+
+export interface PolygonSearchResult {
+  polygonId: string;
+  receiverName: string;
+  receiverInn: string | null;
+  facilityAddress: string;
+  facilityCoordinates: string | null;
+  region: string | null;
+  phone: string | null;
+  email: string | null;
+  kipNumber: string | null;
 }
 
 export interface Polygon {

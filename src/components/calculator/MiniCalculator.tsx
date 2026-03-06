@@ -16,11 +16,6 @@ export function MiniCalculator() {
       title: 'Перевозка + утилизация',
       href: '/calculator/disposal-auto',
     },
-    {
-      icon: '📍',
-      title: 'Выбрать полигон',
-      href: '/calculator/disposal-manual',
-    },
   ];
 
   return (
@@ -32,7 +27,7 @@ export function MiniCalculator() {
         Выберите услугу и узнайте цену за 2 минуты
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
         {services.map((service) => (
           <button
             key={service.href}

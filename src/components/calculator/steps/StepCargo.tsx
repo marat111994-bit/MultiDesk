@@ -84,9 +84,32 @@ export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps
       volume: formData.cargo.volume,
       unit: formData.cargo.unit,
       compaction: formData.cargo.compaction,
+      isCustomCargo: false,
+      customCargoName: '',
     };
     onChange('cargo', cargoData);
     setSearchQuery(item.fkkoCode ? `${item.fkkoCode} — ${item.itemName}` : item.itemName);
+    setShowDropdown(false);
+    setSearchResults([]);
+  };
+
+  const handleCustomCargoUse = () => {
+    const customName = searchQuery.trim();
+    if (!customName) return;
+
+    const cargoData = {
+      name: customName,
+      fkkoCode: '',
+      code: '',
+      hazardClass: undefined,
+      categoryCode: '',
+      volume: formData.cargo.volume,
+      unit: formData.cargo.unit,
+      compaction: formData.cargo.compaction,
+      isCustomCargo: true,
+      customCargoName: customName,
+    };
+    onChange('cargo', cargoData);
     setShowDropdown(false);
     setSearchResults([]);
   };
@@ -101,6 +124,8 @@ export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps
       volume: formData.cargo.volume,
       unit: formData.cargo.unit,
       compaction: formData.cargo.compaction,
+      isCustomCargo: false,
+      customCargoName: '',
     });
     setSearchQuery('');
     setSearchResults([]);
@@ -113,6 +138,16 @@ export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps
     // Если поле очищено вручную — сбрасываем выбор груза
     if (!value.trim()) {
       handleClearCargo();
+    } else {
+      // Если начали вводить заново после выбора — сбрасываем
+      onChange('cargo', {
+        ...formData.cargo,
+        name: '',
+        fkkoCode: '',
+        code: '',
+        isCustomCargo: false,
+        customCargoName: '',
+      });
     }
   };
 
@@ -170,11 +205,24 @@ export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps
 
   const isCargoSelected = !!formData.cargo.fkkoCode || !!formData.cargo.name;
   const isInert = formData.cargo.categoryCode === 'INERT';
+  const isCustomCargo = formData.cargo.isCustomCargo === true;
 
   // Обрезка названия до 70 символов
   const truncateName = (name: string, maxLength = 70) => {
     if (name.length <= maxLength) return name;
     return name.slice(0, maxLength - 2) + '...';
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Блокируем табуляцию — она не должна закрывать dropdown или менять поведение
+    if (e.key === 'Tab') {
+      // Разрешаем стандартную табуляцию, но не закрываем dropdown принудительно
+      return;
+    }
+    // Блокируем Enter — он не должен отправлять форму
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
   };
 
   return (
@@ -184,7 +232,7 @@ export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Поиск груза *
         </label>
-        
+
         {!isCargoSelected ? (
           <>
             <div className="relative">
@@ -192,8 +240,12 @@ export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps
                 type="text"
                 value={searchQuery}
                 onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyDown}
                 placeholder="🔍 Введите код ФККО или название груза..."
                 className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck="false"
               />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                 🔍
@@ -231,12 +283,41 @@ export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps
                     </div>
                   </button>
                 ))}
+                {/* Опция "Использовать своё название" */}
+                <button
+                  onClick={handleCustomCargoUse}
+                  className="w-full px-4 py-3 text-left hover:bg-blue-50 border-t border-gray-200 bg-blue-50 transition-colors flex items-center gap-2"
+                >
+                  <span className="text-blue-600">✏️</span>
+                  <div>
+                    <div className="font-medium text-blue-900">
+                      Использовать: "{truncateName(searchQuery, 50)}"
+                    </div>
+                    <div className="text-xs text-blue-600">
+                      Свой вариант (без ФККО)
+                    </div>
+                  </div>
+                </button>
               </div>
             )}
 
             {showDropdown && searchResults.length === 0 && searchQuery.length >= 2 && !isSearching && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center text-gray-500">
-                Ничего не найдено
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
+                <div className="text-center text-gray-500 mb-3">Ничего не найдено</div>
+                <button
+                  onClick={handleCustomCargoUse}
+                  className="w-full px-4 py-3 text-left hover:bg-blue-50 border border-gray-200 rounded-lg bg-blue-50 transition-colors flex items-center gap-2"
+                >
+                  <span className="text-blue-600">✏️</span>
+                  <div>
+                    <div className="font-medium text-blue-900">
+                      Использовать: "{truncateName(searchQuery, 50)}"
+                    </div>
+                    <div className="text-xs text-blue-600">
+                      Свой вариант (без ФККО)
+                    </div>
+                  </div>
+                </button>
               </div>
             )}
           </>
@@ -247,35 +328,48 @@ export function StepCargo({ formData, onChange, onNext, onBack }: StepCargoProps
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-green-600">✓</span>
-                  {formData.cargo.fkkoCode && (
-                    <span className="font-semibold text-gray-900">
-                      {formData.cargo.fkkoCode}
-                    </span>
-                  )}
-                  {!formData.cargo.fkkoCode && isInert && (
-                    <span className="font-semibold text-gray-900">
-                      {formData.cargo.name}
-                    </span>
+                  {isCustomCargo ? (
+                    <>
+                      <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded font-medium">
+                        ✏️ Своё название
+                      </span>
+                      <span className="font-semibold text-gray-900">
+                        {truncateName(formData.cargo.name, 100)}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      {formData.cargo.fkkoCode && (
+                        <span className="font-semibold text-gray-900">
+                          {formData.cargo.fkkoCode}
+                        </span>
+                      )}
+                      {!formData.cargo.fkkoCode && isInert && (
+                        <span className="font-semibold text-gray-900">
+                          {formData.cargo.name}
+                        </span>
+                      )}
+                    </>
                   )}
                   <div className="flex gap-2">
-                    {formData.cargo.categoryCode && (
+                    {!isCustomCargo && formData.cargo.categoryCode && (
                       <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-700 rounded">
                         {formData.cargo.categoryCode}
                       </span>
                     )}
-                    {formData.cargo.hazardClass && (
+                    {!isCustomCargo && formData.cargo.hazardClass && (
                       <span className="px-2 py-0.5 text-xs bg-orange-100 text-orange-700 rounded">
                         Класс опасности: {formData.cargo.hazardClass}
                       </span>
                     )}
-                    {isInert && (
+                    {isInert && !isCustomCargo && (
                       <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">
                         Инертный материал
                       </span>
                     )}
                   </div>
                 </div>
-                {!isInert && formData.cargo.name && (
+                {!isInert && formData.cargo.name && !isCustomCargo && (
                   <div className="text-sm text-gray-600 mt-1">
                     {truncateName(formData.cargo.name, 100)}
                   </div>

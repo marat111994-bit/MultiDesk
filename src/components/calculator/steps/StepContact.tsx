@@ -55,6 +55,13 @@ export function StepContact({ formData, onChange, onNext, onBack }: StepContactP
 
   return (
     <div className="space-y-6">
+      <div className="mb-6">
+        <p className="text-gray-600 text-sm">
+          Последний шаг! Укажите контакты — и мы мгновенно сформируем 
+          персональное коммерческое предложение с точным расчётом стоимости.
+        </p>
+      </div>
+
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
           Ваше имя *

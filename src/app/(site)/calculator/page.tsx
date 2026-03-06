@@ -24,14 +24,6 @@ export default function CalculatorPage() {
       href: '/calculator/disposal-auto',
       color: 'green',
     },
-    {
-      icon: '📍',
-      title: 'Перевозка + утилизация',
-      description: '(выбор полигона)',
-      details: 'Вы уже знаете куда везти',
-      href: '/calculator/disposal-manual',
-      color: 'purple',
-    },
   ];
 
   const getColorClasses = (color: string) => {
@@ -49,13 +41,6 @@ export default function CalculatorPage() {
           border: 'border-green-200',
           hover: 'hover:border-green-400 hover:shadow-green-100',
           button: 'bg-green-600 hover:bg-green-700',
-        };
-      case 'purple':
-        return {
-          bg: 'bg-purple-50',
-          border: 'border-purple-200',
-          hover: 'hover:border-purple-400 hover:shadow-purple-100',
-          button: 'bg-purple-600 hover:bg-purple-700',
         };
       default:
         return {
@@ -89,7 +74,7 @@ export default function CalculatorPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {services.map((service) => {
               const colors = getColorClasses(service.color);
 
@@ -113,9 +98,7 @@ export default function CalculatorPage() {
                       className={`text-sm font-medium ${
                         service.color === 'blue'
                           ? 'text-blue-700'
-                          : service.color === 'green'
-                            ? 'text-green-700'
-                            : 'text-purple-700'
+                          : 'text-green-700'
                       }`}
                     >
                       Расчёт займёт 2 минуты
@@ -152,7 +135,7 @@ export default function CalculatorPage() {
                 Почему выбирают нас
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="text-center">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
                     <svg
@@ -198,30 +181,6 @@ export default function CalculatorPage() {
                   </h3>
                   <p className="text-sm text-gray-600">
                     Все полигоны имеют лицензии на утилизацию отходов
-                  </p>
-                </div>
-
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg
-                      className="w-6 h-6 text-purple-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    Прозрачные цены
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Никаких скрытых платежей — всё честно и открыто
                   </p>
                 </div>
               </div>

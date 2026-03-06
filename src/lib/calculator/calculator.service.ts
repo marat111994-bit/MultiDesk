@@ -615,77 +615,6 @@ export async function calculateDisposalAuto(input: {
   };
 }
 
-/**
- * Рассчитывает стоимость утилизации для конкретного полигона.
- */
-export async function calculateDisposalSingle(input: {
-  pickupCoords: { lat: number; lon: number };
-  fkkoCode: string;
-  volume: number;
-  unit: 't' | 'm3';
-  compaction: number;
-  polygonId: string;
-}): Promise<DisposalOption | null> {
-  const { pickupCoords, fkkoCode, volume, unit, compaction, polygonId } = input;
-
-  // 1. Находим тариф для данного FKCO и полигона
-  const utilizationTariff = await prisma.utilizationTariff.findUnique({
-    where: {
-      fkkoCode_polygonId: {
-        fkkoCode,
-        polygonId,
-      },
-    },
-    include: {
-      polygon: {
-        select: {
-          id: true,
-          receiverName: true,
-          facilityAddress: true,
-          facilityCoordinates: true,
-          isActive: true,
-        },
-      },
-    },
-  });
-
-  if (!utilizationTariff || !utilizationTariff.polygon.isActive) {
-    return null;
-  }
-
-  // 2. Получаем координаты полигона
-  const coords = parseCoords(utilizationTariff.polygon.facilityCoordinates);
-  if (!coords) {
-    return null;
-  }
-
-  // 3. Рассчитываем расстояние
-  const distanceKm = await getRoadDistance(
-    pickupCoords.lat,
-    pickupCoords.lon,
-    coords.lat,
-    coords.lon
-  );
-
-  // 4. Получаем тариф перевозки
-  const tariffData = await getTariffByDistance(distanceKm);
-  if (!tariffData) {
-    return null;
-  }
-
-  // 5. Рассчитываем стоимость
-  return calculateDisposalForPolygon(
-    utilizationTariff.polygon,
-    utilizationTariff.tariffRubT,
-    pickupCoords,
-    distanceKm,
-    volume,
-    unit,
-    compaction,
-    { baseTariffT: tariffData.baseTariffT, baseTariffM3: tariffData.baseTariffM3 }
-  );
-}
-
 // ==================== ЭКСПОРТ ДЛЯ ПРИМЕРА ====================
 
 /**
@@ -707,15 +636,5 @@ export async function calculateDisposalSingle(input: {
  *   volume: 10,
  *   unit: 't',
  *   compaction: 1.4,
- * });
- *
- * // Утилизация (конкретный полигон)
- * const single = await calculateDisposalSingle({
- *   pickupCoords: { lat: 55.7558, lon: 37.6173 },
- *   fkkoCode: '81112311394',
- *   volume: 10,
- *   unit: 't',
- *   compaction: 1.4,
- *   polygonId: 'polygon-123',
  * });
  */

@@ -34,11 +34,26 @@ export function StepReviewDisposal({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-gray-400">Название</p>
-                <p className="text-gray-900">{cargo.name}</p>
+                <p className="text-gray-900">
+                  {cargo.isCustomCargo ? (
+                    <span className="inline-flex items-center gap-1">
+                      <span className="text-purple-600">✏️</span>
+                      {cargo.name}
+                    </span>
+                  ) : (
+                    cargo.name
+                  )}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-400">Код ФККО</p>
-                <p className="text-gray-900">{cargo.fkkoCode}</p>
+                <p className="text-gray-900">
+                  {cargo.isCustomCargo ? (
+                    <span className="text-gray-400">— (своё название)</span>
+                  ) : (
+                    cargo.fkkoCode || '—'
+                  )}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-400">Объём</p>
