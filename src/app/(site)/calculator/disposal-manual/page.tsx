@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalculatorLayout } from '@/components/calculator/CalculatorLayout';
 import { StepCargo } from '@/components/calculator/steps/StepCargo';
-import { StepRouteDisposalAuto } from '@/components/calculator/steps/StepRouteDisposalAuto';
+import { StepRouteDisposalManual } from '@/components/calculator/steps/StepRouteDisposalManual';
 import { StepContact } from '@/components/calculator/steps/StepContact';
 import { StepSuccess } from '@/components/calculator/steps/StepSuccess';
 import { FormData, createInitialFormData } from '@/lib/types/calculator';
@@ -16,12 +16,17 @@ const STEP_TITLES = [
   'Успех',
 ];
 
-export default function DisposalAutoCalculatorPage() {
+export default function DisposalManualCalculatorPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(createInitialFormData());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const formDataRef = useRef<FormData>(formData);
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
 
   const handleChange = useCallback((field: string, value: unknown) => {
     setFormData((prev) => {
@@ -50,43 +55,38 @@ export default function DisposalAutoCalculatorPage() {
     setStep((prev) => Math.max(prev - 1, 1));
   }, []);
 
-  // Шаг 3 -> отправка заявки
   const handleSubmitApplication = useCallback(async () => {
     setIsSubmitting(true);
     setError(null);
 
     try {
+      const current = formDataRef.current;
       const response = await fetch('/api/calculator/applications', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          serviceType: 'transport_disposal_auto',
-          // Контакты
-          contactName: formData.contact.name,
-          contactPhone: formData.contact.phone,
-          // Груз
-          cargoName: formData.cargo.name,
-          cargoCode: formData.cargo.code,
-          fkkoCode: formData.cargo.fkkoCode,
-          volume: formData.cargo.volume,
-          unit: formData.cargo.unit,
-          compaction: formData.cargo.compaction,
-          // Погрузка
-          pickupAddress: formData.pickup.address,
-          pickupCoords: formData.pickup.coords,
-          pickupMode: formData.pickup.mode,
-          // Полигон
-          polygonId: formData.selectedOption?.polygonId || null,
-          polygonName: formData.selectedOption?.polygonName || null,
-          polygonAddress: formData.selectedOption?.polygonAddress || null,
-          polygonCoords: formData.selectedOption?.polygonCoords || null,
-          // Результат
-          distanceKm: formData.selectedOption?.distanceKm || null,
-          transportPrice: formData.selectedOption?.transportPrice || null,
-          utilizationPrice: formData.selectedOption?.utilizationPrice || null,
-          totalPrice: formData.selectedOption?.totalPrice || 0,
+          serviceType: 'transport_disposal_manual',
+          contactName: current.contact.name,
+          contactPhone: current.contact.phone,
+          cargoName: current.cargo.name,
+          cargoCode: current.cargo.code,
+          fkkoCode: current.cargo.fkkoCode,
+          volume: current.cargo.volume,
+          unit: current.cargo.unit,
+          compaction: current.cargo.compaction,
+          pickupAddress: current.pickup.address,
+          pickupCoords: current.pickup.coords,
+          pickupMode: current.pickup.mode,
+          polygonId: current.selectedOption?.polygonId || null,
+          polygonName: current.selectedOption?.polygonName || null,
+          polygonAddress: current.selectedOption?.polygonAddress || null,
+          polygonCoords: current.selectedOption?.polygonCoords || null,
+          distanceKm: current.selectedOption?.distanceKm || null,
+          transportPrice: current.selectedOption?.transportPrice || null,
+          utilizationPrice: current.selectedOption?.utilizationPrice || null,
+          totalPrice: current.selectedOption?.totalPrice || 0,
         }),
       });
 
@@ -110,7 +110,7 @@ export default function DisposalAutoCalculatorPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData]);
+  }, []);
 
   const showToast = error !== null;
 
@@ -127,7 +127,7 @@ export default function DisposalAutoCalculatorPage() {
         );
       case 2:
         return (
-          <StepRouteDisposalAuto
+          <StepRouteDisposalManual
             formData={formData}
             onChange={handleChange}
             onNext={handleNext}

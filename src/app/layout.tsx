@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { TopBar, Header, Footer } from "@/components/layout";
 import { OrganizationJsonLd } from "@/components/seo";
 import { AnalyticsProviders } from "@/components/analytics/AnalyticsProviders";
 import "@/lib/client-logger"
@@ -43,10 +42,7 @@ export default function RootLayout({
           gaId={process.env.NEXT_PUBLIC_GA_ID}
         />
 
-        <TopBar promoText="Скидка 10% на первый вывоз!" />
-        <Header />
-        <main>{children}</main>
-        <Footer />
+        {children}
       </body>
     </html>
   );
