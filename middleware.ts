@@ -18,6 +18,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Публичный endpoint для поиска грузов (используется в калькуляторе)
+  if (pathname === "/api/admin/calculator/cargo-items/search") {
+    return NextResponse.next()
+  }
+
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
@@ -37,9 +42,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin", request.url))
   }
 
+  // Защита API админки
+  if (pathname.startsWith("/api/admin")) {
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+  }
+
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 }
