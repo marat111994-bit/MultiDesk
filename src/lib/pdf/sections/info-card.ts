@@ -6,6 +6,7 @@
 import PDFDocument from 'pdfkit';
 import { COLORS, FONT_SIZE, SPACING } from '../pdf-styles';
 import { PdfTransportData, PdfDisposalData } from '../types';
+import { normalizeUnit } from '../utils';
 
 interface InfoCardOptions {
   doc: InstanceType<typeof PDFDocument>;
@@ -69,7 +70,7 @@ export function drawInfoCard({ doc, x, y, width, data }: InfoCardOptions): numbe
   }
 
   // Объём
-  const volumeText = `${new Intl.NumberFormat('ru-RU').format(data.cargo.volume)} ${data.cargo.unit}`;
+  const volumeText = `${new Intl.NumberFormat('ru-RU').format(data.cargo.volume)} ${normalizeUnit(data.cargo.unit)}`;
   rows.push({
     label: 'Объём:',
     value: volumeText,

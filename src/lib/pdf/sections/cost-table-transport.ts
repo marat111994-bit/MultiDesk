@@ -1,12 +1,13 @@
 /**
  * Секция 4A: ТАБЛИЦА РАСЧЁТА СТОИМОСТИ
  * Форма 1 — Перевозка (только транспорт)
- * 
+ *
  * Колонки: № | Услуга | Объём | Тариф | Плечо | Стоимость | Итого
  */
 import PDFDocument from 'pdfkit';
 import { COLORS, FONT_SIZE, SPACING } from '../pdf-styles';
 import { PdfTransportData } from '../types';
+import { normalizeUnit } from '../utils';
 
 interface TransportTableOptions {
   doc: InstanceType<typeof PDFDocument>;
@@ -101,8 +102,8 @@ export function drawTransportCostTable({
 
   // Данные для строки
   const distanceText = `${formatNumber(data.route.distance)} км`;
-  const volumeText = `${formatNumber(data.cargo.volume)} ${data.cargo.unit}`;
-  const tariffText = `${formatNumber(data.pricing.tariffPerTKm)} ₽/т×км / ${formatNumber(data.pricing.tariffPerT)} ₽/т`;
+  const volumeText = `${formatNumber(data.cargo.volume)} ${normalizeUnit(data.cargo.unit)}`;
+  const tariffText = `${formatNumber(data.pricing.tariffPerT)} ₽/т (${formatNumber(data.pricing.tariffPerTKm)} ₽/т×км)`;
   const costText = formatCurrency(data.pricing.totalCost);
 
   // Формируем название услуги с ФККО

@@ -1,12 +1,13 @@
 /**
  * Секция 4B: ТАБЛИЦА РАСЧЁТА СТОИМОСТИ
  * Форма 2 — Перевозка + утилизация
- * 
+ *
  * Колонки: № | Услуга | Груз | Объём | Плечо | Цена за ед. | Итого
  */
 import PDFDocument from 'pdfkit';
 import { COLORS, FONT_SIZE, SPACING } from '../pdf-styles';
 import { PdfDisposalData } from '../types';
+import { normalizeUnit } from '../utils';
 
 interface DisposalTableOptions {
   doc: InstanceType<typeof PDFDocument>;
@@ -107,7 +108,7 @@ export function drawDisposalCostTable({
     cargoName += `, ФККО ${data.cargo.fkkoCode}`;
   }
 
-  const volumeText = `${formatNumber(data.cargo.volume)} ${data.cargo.unit}`;
+  const volumeText = `${formatNumber(data.cargo.volume)} ${normalizeUnit(data.cargo.unit)}`;
   const distanceText = `${formatNumber(data.route.distance)} км`;
 
   // Данные для строки 1: Перевозка
