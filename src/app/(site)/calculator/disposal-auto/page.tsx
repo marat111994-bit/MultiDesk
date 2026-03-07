@@ -161,7 +161,7 @@ export default function DisposalAutoCalculatorPage() {
     }
   };
 
-  const hideNext = step === 3 || step === 4;
+  const hideNext = step === 1 || step === 2 || step === 3 || step === 4;
   const hideBack = step === 1 || step === 4;
 
   const nextDisabled = isSubmitting;
