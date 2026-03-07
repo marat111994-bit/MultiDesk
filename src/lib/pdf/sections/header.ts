@@ -1,7 +1,9 @@
 /**
  * Секция 1: ШАПКА документа
- * Компактная шапка: название + контакты + ИНН/КПП/ОГРН
- * Без ОКВЭД, ЭДО, юр.адреса, директора, банковских реквизитов
+ * Трёхуровневая шапка:
+ * 1. ООО «ДАН-МАКС» (по центру, 23pt Bold)
+ * 2. Tagline (по центру, подобран шрифт)
+ * 3. ИНН/ОГРН (слева) + Контакты (справа)
  */
 import PDFDocument from 'pdfkit';
 import { COMPANY } from '../company-info';
@@ -18,103 +20,97 @@ interface HeaderOptions {
  * Отрисовка шапки документа
  */
 export function drawHeader({ doc, x, y, width }: HeaderOptions): void {
-  const contactWidth = width / 2;
+  const centerX = x + width / 2;
   let currentY = y;
 
-  // === ЛЕВАЯ ЧАСТЬ — Название компании + реквизиты ===
-  
-  // Название компании — 24pt Bold (увеличено в 2 раза)
+  // === СТРОКА 1: ООО «ДАН-МАКС» (по центру, 23pt Bold) ===
   doc
     .font('Bold')
-    .fontSize(24)
+    .fontSize(23)
     .fillColor(COLORS.heading)
     .text(COMPANY.fullName, x, currentY, {
-      width: contactWidth,
-      align: 'left',
+      width,
+      align: 'center',
     });
-  
-  currentY += 28; // отступ после названия
 
-  // Под названием — tagline
+  // === ЛИНИЯ 1 ===
+  const line1Y = currentY + 28;
+  doc
+    .strokeColor(COLORS.borderMedium)
+    .lineWidth(0.75)
+    .moveTo(x, line1Y)
+    .lineTo(x + width, line1Y)
+    .stroke();
+
+  currentY = line1Y + 10;
+
+  // === СТРОКА 2: Tagline (по центру, 11pt чтобы совпадало по ширине) ===
+  // Подбираем размер шрифта так, чтобы ширина строки ≈ ширине названия
+  const taglineFontSize = 11;
+  
   doc
     .font('Regular')
-    .fontSize(7)
-    .fillColor(COLORS.textMuted)
+    .fontSize(taglineFontSize)
+    .fillColor(COLORS.text)
     .text(
       COMPANY.tagline,
       x,
       currentY,
-      { width: contactWidth, align: 'left' }
-    );
-  
-  currentY += 12; // отступ после tagline
-
-  // ИНН/КПП
-  doc
-    .font('Regular')
-    .fontSize(7)
-    .fillColor(COLORS.textLight)
-    .text(
-      `ИНН ${COMPANY.inn} / КПП ${COMPANY.kpp}`,
-      x,
-      currentY,
-      { width: contactWidth, align: 'left' }
-    );
-  
-  currentY += 11; // отступ после ИНН/КПП
-
-  // ОГРН
-  doc
-    .font('Regular')
-    .fontSize(7)
-    .fillColor(COLORS.textLight)
-    .text(
-      `ОГРН ${COMPANY.ogrn}`,
-      x,
-      currentY,
-      { width: contactWidth, align: 'left' }
+      {
+        width,
+        align: 'center',
+      }
     );
 
-  // === ПРАВАЯ ЧАСТЬ — Контакты (по правому краю) ===
-  const contactX = x + contactWidth;
-  const contactY = y;
-
-  // Телефон — 8pt
-  doc
-    .font('Regular')
-    .fontSize(8)
-    .fillColor(COLORS.text)
-    .text(COMPANY.phone, contactX, contactY, {
-      width: contactWidth,
-      align: 'right',
-    });
-
-  // Email — 8pt
-  doc
-    .font('Regular')
-    .fontSize(8)
-    .fillColor(COLORS.text)
-    .text(COMPANY.email, contactX, contactY + 12, {
-      width: contactWidth,
-      align: 'right',
-    });
-
-  // Сайт — 7pt
-  doc
-    .font('Regular')
-    .fontSize(7)
-    .fillColor(COLORS.textMuted)
-    .text(COMPANY.website, contactX, contactY + 24, {
-      width: contactWidth,
-      align: 'right',
-    });
-
-  // === Горизонтальная линия под шапкой ===
-  const lineY = y + 55;
+  // === ЛИНИЯ 2 ===
+  const line2Y = currentY + 18;
   doc
     .strokeColor(COLORS.borderMedium)
     .lineWidth(0.75)
-    .moveTo(x, lineY)
-    .lineTo(x + width, lineY)
+    .moveTo(x, line2Y)
+    .lineTo(x + width, line2Y)
+    .stroke();
+
+  currentY = line2Y + 12;
+
+  // === СТРОКА 3: ИНН/ОГРН (слева) + Контакты (справа) ===
+  const leftColumnWidth = width / 2 - 10;
+  const rightColumnWidth = width / 2 - 10;
+  const leftX = x + 5;
+  const rightX = x + width / 2 + 5;
+
+  // Левая колонка: ИНН/КПП и ОГРН
+  const leftText = `ИНН ${COMPANY.inn} / КПП ${COMPANY.kpp}\nОГРН ${COMPANY.ogrn}`;
+  
+  doc
+    .font('Regular')
+    .fontSize(8)
+    .fillColor(COLORS.text)
+    .text(leftText, leftX, currentY, {
+      width: leftColumnWidth,
+      align: 'left',
+      lineGap: 3,
+    });
+
+  // Правая колонка: Контакты (3 строки)
+  const rightText = `${COMPANY.phone}\n${COMPANY.email}\n${COMPANY.website}`;
+  
+  doc
+    .font('Regular')
+    .fontSize(8)
+    .fillColor(COLORS.text)
+    .text(rightText, rightX, currentY, {
+      width: rightColumnWidth,
+      align: 'right',
+      lineGap: 3,
+    });
+
+  // === ЛИНИЯ 3 (перед заголовком) ===
+  const line3Y = currentY + 35;
+  doc
+    .strokeColor(COLORS.borderMedium)
+    .lineWidth(0.75)
+    .moveTo(x, line3Y)
+    .lineTo(x + width, line3Y)
     .stroke();
 }

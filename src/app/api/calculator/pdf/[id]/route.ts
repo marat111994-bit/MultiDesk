@@ -167,20 +167,33 @@ function preparePdfData(calculation: {
     },
   };
 
-  // Вычисляем тарифы
-  // transportTariffPerKm — это тариф за т×км
-  // transportTariff — это тариф за т (или итоговый)
-  const tariffPerTKm = calculation.transportTariffPerKm || 0;
+  // Вычисляем тарифы из стоимости, если они не заполнены в БД
+  const volume = calculation.volume || 0;
   const distance = calculation.distanceKm || 0;
+  const transportPrice = calculation.transportPrice || 0;
   
-  // Если tariffPerT не указан, вычисляем его как tariffPerTKm × distance
+  // Тариф за тонну = стоимость / объём
   let tariffPerT = calculation.transportTariff || 0;
-  if (!tariffPerT && tariffPerTKm && distance) {
-    tariffPerT = tariffPerTKm * distance;
+  if (!tariffPerT && volume > 0) {
+    tariffPerT = transportPrice / volume;
+  }
+  
+  // Тариф за т×км = стоимость / (объём × расстояние)
+  let tariffPerTKm = calculation.transportTariffPerKm || 0;
+  if (!tariffPerTKm && volume > 0 && distance > 0) {
+    tariffPerTKm = transportPrice / (volume * distance);
   }
 
   if (isDisposal) {
     // Форма 2: Перевозка + утилизация
+    const disposalPrice = calculation.utilizationPrice || 0;
+    
+    // Тариф утилизации = стоимость утилизации / объём
+    let disposalTariffPerT = calculation.utilizationTariff || 0;
+    if (!disposalTariffPerT && volume > 0) {
+      disposalTariffPerT = disposalPrice / volume;
+    }
+    
     const data: PdfDisposalData = {
       type: 'transport-disposal',
       ...baseData,
@@ -200,7 +213,7 @@ function preparePdfData(calculation: {
           cost: calculation.transportPrice || 0,
         },
         disposal: {
-          tariffPerT: calculation.utilizationTariff || 0,
+          tariffPerT: disposalTariffPerT,
           cost: calculation.utilizationPrice || 0,
         },
         totalCost: calculation.totalPrice || 0,

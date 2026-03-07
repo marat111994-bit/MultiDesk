@@ -17,7 +17,6 @@ import { drawInfoCard } from './sections/info-card';
 import { drawTransportCostTable } from './sections/cost-table-transport';
 import { drawDisposalCostTable } from './sections/cost-table-disposal';
 import { drawTerms } from './sections/terms';
-import { drawRequisites } from './sections/requisites';
 import { drawFooter } from './sections/footer';
 import path from 'path';
 
@@ -72,14 +71,14 @@ export async function generatePdf(data: PdfData): Promise<Buffer> {
       let currentY = PAGE.margin;
       const contentWidth = PAGE.width - PAGE.margin * 2;
 
-      // 1. ШАПКА (~60pt)
+      // 1. ШАПКА (~85pt — 3 строки с линиями)
       drawHeader({
         doc,
         x: PAGE.margin,
         y: currentY,
         width: contentWidth,
       });
-      currentY += 60 + SPACING.lg;
+      currentY += 85 + SPACING.lg;
 
       // 2. ЗАГОЛОВОК (~35pt)
       drawTitle({
@@ -131,22 +130,14 @@ export async function generatePdf(data: PdfData): Promise<Buffer> {
         y: currentY,
         width: contentWidth,
       });
-      currentY += 65 + SPACING.md;
+      currentY += 65 + SPACING.xl;
 
-      // 6. РЕКВИЗИТЫ (~50pt)
-      drawRequisites({
-        doc,
-        x: PAGE.margin,
-        y: currentY,
-        width: contentWidth,
-      });
-      currentY += 50 + SPACING.lg;
-
-      // 7. ФУТЕР (одна строка внизу)
+      // 6. ФУТЕР — абсолютно внизу страницы (отступ 28pt от низа)
+      const footerY = PAGE.height - PAGE.margin - 28;
       drawFooter({
         doc,
         x: PAGE.margin,
-        y: currentY,
+        y: footerY,
         width: contentWidth,
       });
 

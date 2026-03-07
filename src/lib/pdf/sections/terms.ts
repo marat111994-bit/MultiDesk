@@ -27,7 +27,8 @@ export function drawTerms({ doc, x, y, width }: TermsOptions): void {
   const fontSize = 7.5;
   const lineHeight = 12;
   const bulletRadius = 2;
-  const bulletX = x + bulletRadius + 1;
+  const leftPadding = 15; // Увеличенный отступ слева
+  const bulletX = x + leftPadding + bulletRadius + 1;
 
   let currentY = y;
 
@@ -43,8 +44,8 @@ export function drawTerms({ doc, x, y, width }: TermsOptions): void {
       .font('Regular')
       .fontSize(fontSize)
       .fillColor(COLORS.text) // Более выразительный цвет (не textMuted)
-      .text(item, x + 8, currentY, {
-        width: width - 10,
+      .text(item, x + leftPadding + 8, currentY, {
+        width: width - leftPadding - 16,
         align: 'left',
         lineGap: 2,
       });
