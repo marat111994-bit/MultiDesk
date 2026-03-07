@@ -30,6 +30,11 @@ export function StepSuccess({ formData, onNewCalculation }: StepSuccessProps) {
   const distanceKm = formData.result?.distanceKm || formData.selectedOption?.distanceKm || 0;
   const totalPrice = formData.result?.totalPrice || formData.selectedOption?.totalPrice || 0;
 
+  // Разбивка стоимости для режима "перевозка + утилизация"
+  const isDisposalMode = !!formData.selectedOption;
+  const transportPrice = formData.result?.transportPrice || formData.selectedOption?.transportPrice || 0;
+  const utilizationPrice = formData.selectedOption?.utilizationPrice || 0;
+
   // Данные груза
   const cargoName = formData.cargo?.name || '';
   const cargoVolume = formData.cargo?.volume || 0;
@@ -140,10 +145,43 @@ export function StepSuccess({ formData, onNewCalculation }: StepSuccessProps) {
       {/* Итоговая стоимость */}
       {totalPrice > 0 && (
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-gray-600 mb-1">Итоговая стоимость</p>
-          <p className="text-2xl font-bold text-green-600">
-            {formatPrice(totalPrice)}
-          </p>
+          {isDisposalMode ? (
+            // Режим "перевозка + утилизация" — показываем разбивку
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Стоимость перевозки</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {formatPrice(transportPrice)}
+                </p>
+              </div>
+              
+              <div className="border-b border-dashed border-gray-200" />
+              
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Стоимость утилизации</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {formatPrice(utilizationPrice)}
+                </p>
+              </div>
+              
+              <div className="border-b border-gray-300" />
+              
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Итоговая стоимость</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {formatPrice(totalPrice)}
+                </p>
+              </div>
+            </div>
+          ) : (
+            // Режим "только перевозка" — показываем только итог
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Итоговая стоимость</p>
+              <p className="text-2xl font-bold text-green-600">
+                {formatPrice(totalPrice)}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
